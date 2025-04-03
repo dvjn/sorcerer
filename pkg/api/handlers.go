@@ -31,12 +31,12 @@ func (h *Handlers) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 
 	exists, size, err := h.storage.HasBlob(name, digest)
 	if err != nil {
-		sendError(w, "BLOB_UNKNOWN", err.Error(), http.StatusInternalServerError)
+		sendError(w, errBlobUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 		return
 	}
 
 	if !exists {
-		sendError(w, "BLOB_UNKNOWN", "Blob not found", http.StatusNotFound)
+		sendError(w, errBlobUnknown, "Blob not found")
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
 
 	blob, size, err := h.storage.GetBlob(name, digest)
 	if err != nil {
-		sendError(w, "BLOB_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errBlobUnknown, err.Error())
 		return
 	}
 	defer blob.Close()
@@ -77,7 +77,7 @@ func (h *Handlers) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 
 	err := h.storage.DeleteBlob(name, digest)
 	if err != nil {
-		sendError(w, "BLOB_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errBlobUnknown, err.Error())
 		return
 	}
 
@@ -90,7 +90,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	if digest := r.URL.Query().Get("digest"); digest != "" {
 		err := h.storage.PutBlob(name, digest, r.Body)
 		if err != nil {
-			sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusBadRequest)
+			sendError(w, errBlobUploadInvalid, err.Error())
 			return
 		}
 
@@ -108,7 +108,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				uploadID, err := h.storage.InitiateUpload(name)
 				if err != nil {
-					sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusInternalServerError)
+					sendError(w, errBlobUploadInvalid, err.Error())
 					return
 				}
 
@@ -129,7 +129,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 
 	uploadID, err := h.storage.InitiateUpload(name)
 	if err != nil {
-		sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusInternalServerError)
+		sendError(w, errBlobUploadInvalid, err.Error())
 		return
 	}
 
@@ -147,7 +147,7 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 
 	info, err := h.storage.GetUploadInfo(name, reference)
 	if err != nil {
-		sendError(w, "BLOB_UPLOAD_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errBlobUploadUnknown, err.Error())
 		return
 	}
 
@@ -155,7 +155,7 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	if contentRange != "" {
 		_, err := fmt.Sscanf(contentRange, "%d-%d", &start, &end)
 		if err != nil {
-			sendError(w, "BLOB_UPLOAD_INVALID", "Invalid content range", http.StatusBadRequest)
+			sendError(w, errBlobUploadInvalid, "Invalid content range")
 			return
 		}
 
@@ -166,7 +166,7 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 			} else {
 				errorMsg = fmt.Sprintf("Range start position %d does not match current offset %d", start, info.Offset)
 			}
-			sendError(w, "BLOB_UPLOAD_INVALID", errorMsg, http.StatusRequestedRangeNotSatisfiable)
+			sendError(w, errRangeInvalid, errorMsg)
 			return
 		}
 	} else {
@@ -177,10 +177,10 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	newOffset, err := h.storage.UploadChunk(name, reference, r.Body, start, end)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid range") {
-			sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusRequestedRangeNotSatisfiable)
+			sendError(w, errRangeInvalid, err.Error())
 			return
 		} else {
-			sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusBadRequest)
+			sendError(w, errBlobUploadInvalid, err.Error())
 			return
 		}
 	}
@@ -197,7 +197,7 @@ func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 	digest := r.URL.Query().Get("digest")
 
 	if digest == "" {
-		sendError(w, "DIGEST_INVALID", "Digest parameter missing", http.StatusBadRequest)
+		sendError(w, errDigestInvalid, "Digest parameter missing")
 		return
 	}
 
@@ -208,7 +208,7 @@ func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 
 	err := h.storage.CompleteUpload(name, reference, digest, content)
 	if err != nil {
-		sendError(w, "BLOB_UPLOAD_INVALID", err.Error(), http.StatusBadRequest)
+		sendError(w, errBlobUploadInvalid, err.Error())
 		return
 	}
 
@@ -224,7 +224,7 @@ func (h *Handlers) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
 
 	info, err := h.storage.GetUploadInfo(name, reference)
 	if err != nil {
-		sendError(w, "BLOB_UPLOAD_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errBlobUploadUnknown, err.Error())
 		return
 	}
 
@@ -246,14 +246,14 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(reference, "sha256:") {
 		exists, _, digest, err = h.storage.HasManifest(name, reference)
 		if err != nil {
-			sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusInternalServerError)
+			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 			return
 		}
 
 		if exists {
 			content, _, err := h.storage.GetManifest(name, digest)
 			if err != nil {
-				sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusInternalServerError)
+				sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 				return
 			}
 			size = int64(len(content))
@@ -261,13 +261,13 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	} else {
 		exists, size, digest, err = h.storage.HasManifest(name, reference)
 		if err != nil {
-			sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusInternalServerError)
+			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 			return
 		}
 	}
 
 	if !exists {
-		sendError(w, "MANIFEST_UNKNOWN", "Manifest not found", http.StatusNotFound)
+		sendError(w, errManifestUnknown, "Manifest not found")
 		return
 	}
 
@@ -288,7 +288,7 @@ func (h *Handlers) GetManifest(w http.ResponseWriter, r *http.Request) {
 
 	content, digest, err := h.storage.GetManifest(name, reference)
 	if err != nil {
-		sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errManifestUnknown, err.Error())
 		return
 	}
 
@@ -313,13 +313,13 @@ func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		sendError(w, "MANIFEST_INVALID", "Failed to read manifest", http.StatusBadRequest)
+		sendError(w, errManifestInvalid, "Failed to read manifest")
 		return
 	}
 
 	digest, err := h.storage.PutManifest(name, reference, body)
 	if err != nil {
-		sendError(w, "MANIFEST_INVALID", err.Error(), http.StatusBadRequest)
+		sendError(w, errManifestInvalid, err.Error())
 		return
 	}
 
@@ -363,7 +363,7 @@ func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 
 	err := h.storage.DeleteManifest(name, reference)
 	if err != nil {
-		sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errManifestUnknown, err.Error())
 		return
 	}
 
@@ -375,7 +375,7 @@ func (h *Handlers) ListTags(w http.ResponseWriter, r *http.Request) {
 
 	tags, err := h.storage.ListTags(name)
 	if err != nil {
-		sendError(w, "NAME_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errNameUnknown, err.Error())
 		return
 	}
 
@@ -425,7 +425,7 @@ func (h *Handlers) ListReferrers(w http.ResponseWriter, r *http.Request) {
 
 	content, err := h.storage.GetReferrers(name, digest, artifactType)
 	if err != nil {
-		sendError(w, "MANIFEST_UNKNOWN", err.Error(), http.StatusNotFound)
+		sendError(w, errManifestUnknown, err.Error())
 		return
 	}
 
