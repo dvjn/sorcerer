@@ -1,3 +1,3 @@
-# Sorcerer
+# sorcerer
 
-Sorcerer is a tool for managing and distributing OCI images and artifacts.
+a minimal oci registry.
