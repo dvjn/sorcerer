@@ -48,14 +48,24 @@ var (
 		Code:   "MANIFEST_UNKNOWN",
 		Status: http.StatusNotFound,
 	}
-	// NAME_INVALID - invalid repository name
-	errNameInvalid = &RegistryError{
-		Code:   "NAME_INVALID",
+	// REPOSITORY_INVALID - invalid repository
+	errRepositoryInvalid = &RegistryError{
+		Code:   "REPOSITORY_INVALID",
 		Status: http.StatusBadRequest,
 	}
-	// NAME_UNKNOWN - repository name not known to registry
-	errNameUnknown = &RegistryError{
-		Code:   "NAME_UNKNOWN",
+	// REPOSITORY_UNKNOWN - repository not known to registry
+	errRepositoryUnknown = &RegistryError{
+		Code:   "REPOSITORY_UNKNOWN",
+		Status: http.StatusNotFound,
+	}
+	// OWNER_INVALID - invalid owner name
+	errOwnerInvalid = &RegistryError{
+		Code:   "OWNER_INVALID",
+		Status: http.StatusBadRequest,
+	}
+	// OWNER_UNKNOWN - owner not known to registry
+	errOwnerUnknown = &RegistryError{
+		Code:   "OWNER_UNKNOWN",
 		Status: http.StatusNotFound,
 	}
 	// SIZE_INVALID - provided length did not match content length

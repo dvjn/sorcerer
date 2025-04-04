@@ -26,7 +26,9 @@ func (h *Handlers) ApiVersionCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
 	exists, size, err := h.storage.HasBlob(name, digest)
@@ -46,7 +48,9 @@ func (h *Handlers) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
 	rangeHeader := r.Header.Get("Range")
@@ -72,7 +76,9 @@ func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) DeleteBlob(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
 	err := h.storage.DeleteBlob(name, digest)
@@ -85,7 +91,9 @@ func (h *Handlers) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 
 	if digest := r.URL.Query().Get("digest"); digest != "" {
 		err := h.storage.PutBlob(name, digest, r.Body)
@@ -94,7 +102,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		location := fmt.Sprintf("/v2/%s/blobs/%s", name, digest)
+		location := fmt.Sprintf("/v2/%s/%s/blobs/%s", owner, repository, digest)
 		w.Header().Set("Location", location)
 		w.Header().Set("Docker-Content-Digest", digest)
 		w.WriteHeader(http.StatusCreated)
@@ -112,14 +120,14 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				location := fmt.Sprintf("/v2/%s/blobs/uploads/%s", name, uploadID)
+				location := fmt.Sprintf("/v2/%s/%s/blobs/uploads/%s", owner, repository, uploadID)
 				w.Header().Set("Location", location)
 				w.Header().Set("Range", "0-0")
 				w.WriteHeader(http.StatusAccepted)
 				return
 			}
 
-			location := fmt.Sprintf("/v2/%s/blobs/%s", name, digest)
+			location := fmt.Sprintf("/v2/%s/%s/blobs/%s", owner, repository, digest)
 			w.Header().Set("Location", location)
 			w.Header().Set("Docker-Content-Digest", digest)
 			w.WriteHeader(http.StatusCreated)
@@ -133,7 +141,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location := fmt.Sprintf("/v2/%s/blobs/uploads/%s", name, uploadID)
+	location := fmt.Sprintf("/v2/%s/%s/blobs/uploads/%s", owner, repository, uploadID)
 	w.Header().Set("Location", location)
 	w.Header().Set("Range", "0-0")
 	w.Header().Set("Oci-Chunk-Min-Length", "1024")
@@ -141,7 +149,9 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 	contentRange := r.Header.Get("Content-Range")
 
@@ -185,14 +195,16 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	location := fmt.Sprintf("/v2/%s/blobs/uploads/%s", name, reference)
+	location := fmt.Sprintf("/v2/%s/%s/blobs/uploads/%s", owner, repository, reference)
 	w.Header().Set("Location", location)
 	w.Header().Set("Range", fmt.Sprintf("0-%d", newOffset-1))
 	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 	digest := r.URL.Query().Get("digest")
 
@@ -212,14 +224,16 @@ func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location := fmt.Sprintf("/v2/%s/blobs/%s", name, digest)
+	location := fmt.Sprintf("/v2/%s/%s/blobs/%s", owner, repository, digest)
 	w.Header().Set("Location", location)
 	w.Header().Set("Docker-Content-Digest", digest)
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *Handlers) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	info, err := h.storage.GetUploadInfo(name, reference)
@@ -228,14 +242,16 @@ func (h *Handlers) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location := fmt.Sprintf("/v2/%s/blobs/uploads/%s", name, reference)
+	location := fmt.Sprintf("/v2/%s/%s/blobs/uploads/%s", owner, repository, reference)
 	w.Header().Set("Location", location)
 	w.Header().Set("Range", fmt.Sprintf("0-%d", info.Offset-1))
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	var exists bool
@@ -283,7 +299,9 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetManifest(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	content, digest, err := h.storage.GetManifest(name, reference)
@@ -308,7 +326,9 @@ func (h *Handlers) GetManifest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	body, err := io.ReadAll(r.Body)
@@ -335,14 +355,16 @@ func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	location := fmt.Sprintf("/v2/%s/manifests/%s", name, reference)
+	location := fmt.Sprintf("/v2/%s/%s/manifests/%s", owner, repository, reference)
 	w.Header().Set("Location", location)
 	w.Header().Set("Docker-Content-Digest", digest)
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	if strings.HasPrefix(reference, "sha256:") {
@@ -371,11 +393,13 @@ func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ListTags(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 
 	tags, err := h.storage.ListTags(name)
 	if err != nil {
-		sendError(w, errNameUnknown, err.Error())
+		sendError(w, errRepositoryUnknown, err.Error())
 		return
 	}
 
@@ -419,7 +443,9 @@ func (h *Handlers) ListTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) ListReferrers(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
+	owner := chi.URLParam(r, "owner")
+	repository := chi.URLParam(r, "repository")
+	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 	artifactType := r.URL.Query().Get("artifactType")
 

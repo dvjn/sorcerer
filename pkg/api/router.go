@@ -14,7 +14,7 @@ func SetupRouter(handlers *Handlers) *chi.Mux {
 	r.Route("/v2", func(r chi.Router) {
 		r.Get("/", handlers.ApiVersionCheck)
 
-		r.Route("/{name}", func(r chi.Router) {
+		r.Route("/{owner}/{repository}", func(r chi.Router) {
 			r.Route("/blobs", func(r chi.Router) {
 				r.Head("/{digest}", handlers.CheckBlobExists)
 				r.Get("/{digest}", handlers.GetBlob)
