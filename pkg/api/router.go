@@ -8,6 +8,7 @@ import (
 func SetupRouter(handlers *Handlers) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/healthz"))
 
 	r.Route("/v2", func(r chi.Router) {
