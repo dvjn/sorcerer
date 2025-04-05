@@ -1,4 +1,4 @@
-package filesystem
+package storage
 
 import (
 	"fmt"
@@ -7,10 +7,9 @@ import (
 	"sync"
 
 	"github.com/dvjn/sorcerer/pkg/models"
-	"github.com/dvjn/sorcerer/pkg/storage"
 )
 
-type FileSystemStorage struct {
+type Storage struct {
 	root      string
 	uploadsMu sync.RWMutex
 	uploads   map[string]*models.UploadInfo
@@ -24,7 +23,7 @@ const (
 	referrersBaseDir = "referrers"
 )
 
-func NewFileSystemStorage(root string) (storage.Storage, error) {
+func NewStorage(root string) (*Storage, error) {
 	for _, dir := range []string{
 		filepath.Join(root, blobsBaseDir),
 		filepath.Join(root, manifestsBaseDir),
@@ -37,7 +36,7 @@ func NewFileSystemStorage(root string) (storage.Storage, error) {
 		}
 	}
 
-	return &FileSystemStorage{
+	return &Storage{
 		root:    root,
 		uploads: make(map[string]*models.UploadInfo),
 	}, nil

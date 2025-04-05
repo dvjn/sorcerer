@@ -1,4 +1,4 @@
-package filesystem
+package storage
 
 import (
 	"crypto/sha256"
@@ -12,15 +12,15 @@ import (
 	"github.com/dvjn/sorcerer/pkg/models"
 )
 
-func (s *FileSystemStorage) uploadDir(name string) string {
+func (s *Storage) uploadDir(name string) string {
 	return filepath.Join(s.root, uploadsBaseDir, name)
 }
 
-func (s *FileSystemStorage) uploadPath(name, id string) string {
+func (s *Storage) uploadPath(name, id string) string {
 	return filepath.Join(s.uploadDir(name), id)
 }
 
-func (s *FileSystemStorage) InitiateUpload(name string) (string, error) {
+func (s *Storage) InitiateUpload(name string) (string, error) {
 	uploadID := fmt.Sprintf("%x", time.Now().UnixNano())
 
 	uploadDir := s.uploadDir(name)
@@ -49,7 +49,7 @@ func (s *FileSystemStorage) InitiateUpload(name string) (string, error) {
 	return uploadID, nil
 }
 
-func (s *FileSystemStorage) UploadChunk(name, id string, content io.Reader, start int64, end int64) (int64, error) {
+func (s *Storage) UploadChunk(name, id string, content io.Reader, start int64, end int64) (int64, error) {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()
@@ -92,7 +92,7 @@ func (s *FileSystemStorage) UploadChunk(name, id string, content io.Reader, star
 	return upload.Offset, nil
 }
 
-func (s *FileSystemStorage) CompleteUpload(name, id, digest string, content io.Reader) error {
+func (s *Storage) CompleteUpload(name, id, digest string, content io.Reader) error {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()
@@ -163,7 +163,7 @@ func (s *FileSystemStorage) CompleteUpload(name, id, digest string, content io.R
 	return nil
 }
 
-func (s *FileSystemStorage) GetUploadInfo(name, id string) (*models.UploadInfo, error) {
+func (s *Storage) GetUploadInfo(name, id string) (*models.UploadInfo, error) {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()

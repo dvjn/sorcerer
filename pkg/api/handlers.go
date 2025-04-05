@@ -7,15 +7,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dvjn/sorcerer/pkg/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 type Handlers struct {
-	storage storage.Storage
+	storage Storage
 }
 
-func NewHandlers(storage storage.Storage) *Handlers {
+func NewHandlers(storage Storage) *Handlers {
 	return &Handlers{
 		storage: storage,
 	}

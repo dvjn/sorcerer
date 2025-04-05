@@ -6,11 +6,11 @@ import (
 	"os"
 
 	"github.com/dvjn/sorcerer/pkg/api"
-	"github.com/dvjn/sorcerer/pkg/storage/filesystem"
+	"github.com/dvjn/sorcerer/pkg/storage"
 )
 
 func main() {
-	storage, err := filesystem.NewFileSystemStorage("data")
+	storage, err := storage.NewStorage("data")
 	if err != nil {
 		fmt.Printf("Failed to initialize storage: %v\n", err)
 		os.Exit(1)
