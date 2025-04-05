@@ -7,9 +7,16 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
+type AuthConfig struct {
+	UserHeader      string
+	GroupsHeader    string
+	GroupsHeaderSep string
+}
+
 type Config struct {
 	StoragePath string
 	Port        int
+	Auth        AuthConfig
 }
 
 type param interface {
@@ -35,6 +42,27 @@ func LoadConfig() *Config {
 			EnvName:    "PORT",
 			DefaultVal: 3000,
 			Usage:      "The port to run the server on",
+		},
+		&params.String{
+			Field:      &config.Auth.UserHeader,
+			FlagName:   "auth-user-header",
+			EnvName:    "AUTH_USER_HEADER",
+			DefaultVal: "",
+			Usage:      "The header to use for fetching the user name",
+		},
+		&params.String{
+			Field:      &config.Auth.GroupsHeader,
+			FlagName:   "auth-groups-header",
+			EnvName:    "AUTH_GROUPS_HEADER",
+			DefaultVal: "",
+			Usage:      "The header to use for fetching the user groups",
+		},
+		&params.String{
+			Field:      &config.Auth.GroupsHeaderSep,
+			FlagName:   "auth-groups-header-sep",
+			EnvName:    "AUTH_GROUPS_HEADER_SEP",
+			DefaultVal: ",",
+			Usage:      "The separator to use for the groups",
 		},
 	}
 

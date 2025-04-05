@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dvjn/sorcerer/pkg/auth"
 	"github.com/dvjn/sorcerer/pkg/config"
 	"github.com/dvjn/sorcerer/pkg/router"
 	"github.com/dvjn/sorcerer/pkg/service"
@@ -20,9 +21,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	auth := auth.NewAuth(config)
+
 	service := service.NewService(storage)
 
-	router := router.SetupRouter(service)
+	router := router.SetupRouter(service, auth)
 
 	fmt.Printf("Starting server on port %d\n", config.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), router)

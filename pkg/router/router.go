@@ -1,11 +1,17 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func SetupRouter(handlers Service) *chi.Mux {
+type Auth interface {
+	Middleware(next http.Handler) http.Handler
+}
+
+func SetupRouter(handlers Service, auth Auth) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -15,6 +21,8 @@ func SetupRouter(handlers Service) *chi.Mux {
 		r.Get("/", handlers.ApiVersionCheck)
 
 		r.Route("/{owner}/{repository}", func(r chi.Router) {
+			r.Use(auth.Middleware)
+
 			r.Route("/blobs", func(r chi.Router) {
 				r.Head("/{digest}", handlers.CheckBlobExists)
 				r.Get("/{digest}", handlers.GetBlob)
