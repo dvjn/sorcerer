@@ -1,8 +1,9 @@
 package config
 
 import (
-	"flag"
 	"os"
+
+	"github.com/pborman/getopt/v2"
 )
 
 type Config struct {
@@ -27,7 +28,7 @@ func LoadConfig() *Config {
 			flagName:   "storage-path",
 			envName:    "STORAGE_PATH",
 			defaultVal: "data",
-			usage:      "The root directory for the storage",
+			usage:      "registry data storage path",
 		},
 		{
 			field:      &config.Port,
@@ -38,16 +39,27 @@ func LoadConfig() *Config {
 		},
 	}
 
+	helpFlag := getopt.BoolLong("help", 'h', "display help")
+
 	loadParameters(params)
+
+	if *helpFlag {
+		getopt.Usage()
+		os.Exit(0)
+	}
 
 	return &config
 }
 
 func loadParameters(params []param) {
 	for _, p := range params {
-		flag.StringVar(p.field, p.flagName, p.defaultVal, p.usage)
+		*p.field = p.defaultVal
 	}
-	flag.Parse()
+
+	for _, p := range params {
+		getopt.FlagLong(p.field, p.flagName, 0, p.usage)
+	}
+	getopt.Parse()
 
 	for _, p := range params {
 		if envVal := os.Getenv(p.envName); envVal != "" {
