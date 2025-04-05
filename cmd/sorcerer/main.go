@@ -6,11 +6,14 @@ import (
 	"os"
 
 	"github.com/dvjn/sorcerer/pkg/api"
+	"github.com/dvjn/sorcerer/pkg/config"
 	"github.com/dvjn/sorcerer/pkg/storage"
 )
 
 func main() {
-	storage, err := storage.NewStorage("data")
+	config := config.LoadConfig()
+
+	storage, err := storage.NewStorage(config.StoragePath)
 	if err != nil {
 		fmt.Printf("Failed to initialize storage: %v\n", err)
 		os.Exit(1)
@@ -20,6 +23,6 @@ func main() {
 
 	router := api.SetupRouter(handlers)
 
-	fmt.Println("Starting server on port 3000")
-	http.ListenAndServe(":3000", router)
+	fmt.Printf("Starting server on port %s\n", config.Port)
+	http.ListenAndServe(":"+config.Port, router)
 }
