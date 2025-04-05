@@ -3,39 +3,38 @@ package config
 import (
 	"os"
 
+	"github.com/dvjn/sorcerer/pkg/config/params"
 	"github.com/pborman/getopt/v2"
 )
 
 type Config struct {
 	StoragePath string
-	Port        string
+	Port        int
 }
 
-type param struct {
-	field      *string
-	flagName   string
-	envName    string
-	defaultVal string
-	usage      string
+type param interface {
+	SetDefault()
+	RegisterFlag()
+	LoadFromEnv()
 }
 
 func LoadConfig() *Config {
 	var config Config
 
 	params := []param{
-		{
-			field:      &config.StoragePath,
-			flagName:   "storage-path",
-			envName:    "STORAGE_PATH",
-			defaultVal: "data",
-			usage:      "registry data storage path",
+		&params.String{
+			Field:      &config.StoragePath,
+			FlagName:   "storage-path",
+			EnvName:    "STORAGE_PATH",
+			DefaultVal: "data",
+			Usage:      "registry data storage path",
 		},
-		{
-			field:      &config.Port,
-			flagName:   "port",
-			envName:    "PORT",
-			defaultVal: "3000",
-			usage:      "The port to run the server on",
+		&params.Int{
+			Field:      &config.Port,
+			FlagName:   "port",
+			EnvName:    "PORT",
+			DefaultVal: 3000,
+			Usage:      "The port to run the server on",
 		},
 	}
 
@@ -53,17 +52,15 @@ func LoadConfig() *Config {
 
 func loadParameters(params []param) {
 	for _, p := range params {
-		*p.field = p.defaultVal
+		p.SetDefault()
 	}
 
 	for _, p := range params {
-		getopt.FlagLong(p.field, p.flagName, 0, p.usage)
+		p.RegisterFlag()
 	}
 	getopt.Parse()
 
 	for _, p := range params {
-		if envVal := os.Getenv(p.envName); envVal != "" {
-			*p.field = envVal
-		}
+		p.LoadFromEnv()
 	}
 }

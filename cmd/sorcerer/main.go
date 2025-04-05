@@ -23,6 +23,6 @@ func main() {
 
 	router := api.SetupRouter(handlers)
 
-	fmt.Printf("Starting server on port %s\n", config.Port)
-	http.ListenAndServe(":"+config.Port, router)
+	fmt.Printf("Starting server on port %d\n", config.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), router)
 }
