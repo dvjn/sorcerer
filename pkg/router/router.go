@@ -1,11 +1,11 @@
-package api
+package router
 
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func SetupRouter(handlers *Handlers) *chi.Mux {
+func SetupRouter(handlers Service) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)

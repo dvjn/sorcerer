@@ -1,4 +1,4 @@
-package api
+package service
 
 import (
 	"encoding/json"
@@ -10,27 +10,27 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type Handlers struct {
+type Service struct {
 	storage Storage
 }
 
-func NewHandlers(storage Storage) *Handlers {
-	return &Handlers{
+func NewService(storage Storage) *Service {
+	return &Service{
 		storage: storage,
 	}
 }
 
-func (h *Handlers) ApiVersionCheck(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ApiVersionCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handlers) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
+func (s *Service) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	exists, size, err := h.storage.HasBlob(name, digest)
+	exists, size, err := s.storage.HasBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 		return
@@ -46,7 +46,7 @@ func (h *Handlers) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetBlob(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -57,7 +57,7 @@ func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Range request not fully implemented, returning full blob:", rangeHeader)
 	}
 
-	blob, size, err := h.storage.GetBlob(name, digest)
+	blob, size, err := s.storage.GetBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown, err.Error())
 		return
@@ -74,13 +74,13 @@ func (h *Handlers) GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) DeleteBlob(w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	err := h.storage.DeleteBlob(name, digest)
+	err := s.storage.DeleteBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown, err.Error())
 		return
@@ -89,13 +89,13 @@ func (h *Handlers) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
+func (s *Service) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 
 	if digest := r.URL.Query().Get("digest"); digest != "" {
-		err := h.storage.PutBlob(name, digest, r.Body)
+		err := s.storage.PutBlob(name, digest, r.Body)
 		if err != nil {
 			sendError(w, errBlobUploadInvalid, err.Error())
 			return
@@ -111,9 +111,9 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	if digest := r.URL.Query().Get("mount"); digest != "" {
 		from := r.URL.Query().Get("from")
 		if from != "" {
-			err := h.storage.MountBlob(from, name, digest)
+			err := s.storage.MountBlob(from, name, digest)
 			if err != nil {
-				uploadID, err := h.storage.InitiateUpload(name)
+				uploadID, err := s.storage.InitiateUpload(name)
 				if err != nil {
 					sendError(w, errBlobUploadInvalid, err.Error())
 					return
@@ -134,7 +134,7 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	uploadID, err := h.storage.InitiateUpload(name)
+	uploadID, err := s.storage.InitiateUpload(name)
 	if err != nil {
 		sendError(w, errBlobUploadInvalid, err.Error())
 		return
@@ -147,14 +147,14 @@ func (h *Handlers) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
+func (s *Service) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 	contentRange := r.Header.Get("Content-Range")
 
-	info, err := h.storage.GetUploadInfo(name, reference)
+	info, err := s.storage.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, errBlobUploadUnknown, err.Error())
 		return
@@ -183,7 +183,7 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 		end = start + r.ContentLength - 1
 	}
 
-	newOffset, err := h.storage.UploadChunk(name, reference, r.Body, start, end)
+	newOffset, err := s.storage.UploadChunk(name, reference, r.Body, start, end)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid range") {
 			sendError(w, errRangeInvalid, err.Error())
@@ -200,7 +200,7 @@ func (h *Handlers) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
+func (s *Service) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -217,7 +217,7 @@ func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 		content = r.Body
 	}
 
-	err := h.storage.CompleteUpload(name, reference, digest, content)
+	err := s.storage.CompleteUpload(name, reference, digest, content)
 	if err != nil {
 		sendError(w, errBlobUploadInvalid, err.Error())
 		return
@@ -229,13 +229,13 @@ func (h *Handlers) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *Handlers) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	info, err := h.storage.GetUploadInfo(name, reference)
+	info, err := s.storage.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, errBlobUploadUnknown, err.Error())
 		return
@@ -247,7 +247,7 @@ func (h *Handlers) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
+func (s *Service) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -259,14 +259,14 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if !strings.HasPrefix(reference, "sha256:") {
-		exists, _, digest, err = h.storage.HasManifest(name, reference)
+		exists, _, digest, err = s.storage.HasManifest(name, reference)
 		if err != nil {
 			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 			return
 		}
 
 		if exists {
-			content, _, err := h.storage.GetManifest(name, digest)
+			content, _, err := s.storage.GetManifest(name, digest)
 			if err != nil {
 				sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 				return
@@ -274,7 +274,7 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 			size = int64(len(content))
 		}
 	} else {
-		exists, size, digest, err = h.storage.HasManifest(name, reference)
+		exists, size, digest, err = s.storage.HasManifest(name, reference)
 		if err != nil {
 			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 			return
@@ -297,13 +297,13 @@ func (h *Handlers) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handlers) GetManifest(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	content, digest, err := h.storage.GetManifest(name, reference)
+	content, digest, err := s.storage.GetManifest(name, reference)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return
@@ -324,7 +324,7 @@ func (h *Handlers) GetManifest(w http.ResponseWriter, r *http.Request) {
 	w.Write(content)
 }
 
-func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
+func (s *Service) PutManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -336,7 +336,7 @@ func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	digest, err := h.storage.PutManifest(name, reference, body)
+	digest, err := s.storage.PutManifest(name, reference, body)
 	if err != nil {
 		sendError(w, errManifestInvalid, err.Error())
 		return
@@ -346,7 +346,7 @@ func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal(body, &manifest); err == nil {
 		if subject, ok := manifest["subject"].(map[string]any); ok {
 			if subjectDigest, ok := subject["digest"].(string); ok {
-				if err := h.storage.UpdateReferrers(name, subjectDigest, body); err != nil {
+				if err := s.storage.UpdateReferrers(name, subjectDigest, body); err != nil {
 					fmt.Printf("Error updating referrers: %v\n", err)
 				}
 				w.Header().Set("OCI-Subject", subjectDigest)
@@ -360,20 +360,20 @@ func (h *Handlers) PutManifest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	if strings.HasPrefix(reference, "sha256:") {
-		content, _, err := h.storage.GetManifest(name, reference)
+		content, _, err := s.storage.GetManifest(name, reference)
 		if err == nil {
 			var manifest map[string]any
 			if err := json.Unmarshal(content, &manifest); err == nil {
 				if subject, ok := manifest["subject"].(map[string]any); ok {
 					if subjectDigest, ok := subject["digest"].(string); ok {
-						if err := h.storage.RemoveReferrer(name, subjectDigest, reference); err != nil {
+						if err := s.storage.RemoveReferrer(name, subjectDigest, reference); err != nil {
 							fmt.Printf("Error removing from referrers: %v\n", err)
 						}
 					}
@@ -382,7 +382,7 @@ func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := h.storage.DeleteManifest(name, reference)
+	err := s.storage.DeleteManifest(name, reference)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return
@@ -391,12 +391,12 @@ func (h *Handlers) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (h *Handlers) ListTags(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ListTags(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 
-	tags, err := h.storage.ListTags(name)
+	tags, err := s.storage.ListTags(name)
 	if err != nil {
 		sendError(w, errRepositoryUnknown, err.Error())
 		return
@@ -441,14 +441,14 @@ func (h *Handlers) ListTags(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *Handlers) ListReferrers(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ListReferrers(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 	artifactType := r.URL.Query().Get("artifactType")
 
-	content, err := h.storage.GetReferrers(name, digest, artifactType)
+	content, err := s.storage.GetReferrers(name, digest, artifactType)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return
