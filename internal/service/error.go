@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/dvjn/sorcerer/pkg/models"
+	"github.com/dvjn/sorcerer/internal/models"
 )
 
 type RegistryError struct {

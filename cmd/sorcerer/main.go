@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dvjn/sorcerer/pkg/auth"
-	"github.com/dvjn/sorcerer/pkg/config"
-	"github.com/dvjn/sorcerer/pkg/router"
-	"github.com/dvjn/sorcerer/pkg/service"
-	"github.com/dvjn/sorcerer/pkg/storage"
+	"github.com/dvjn/sorcerer/internal/auth"
+	"github.com/dvjn/sorcerer/internal/config"
+	"github.com/dvjn/sorcerer/internal/router"
+	"github.com/dvjn/sorcerer/internal/service"
+	"github.com/dvjn/sorcerer/internal/storage"
 )
 
 func main() {

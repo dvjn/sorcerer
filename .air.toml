@@ -5,5 +5,5 @@ tmp_dir = "tmp"
   bin = "./tmp/main"
   cmd = "go build -o ./tmp/main ./cmd/sorcerer"
   delay = 1000
-  include_dir = ["cmd", "pkg"]
+  include_dir = ["cmd", "internal"]
   include_ext = ["go"]

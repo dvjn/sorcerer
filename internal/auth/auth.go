@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/dvjn/sorcerer/pkg/config"
+	"github.com/dvjn/sorcerer/internal/config"
 )
 
 type Auth struct {

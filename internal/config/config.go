@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/dvjn/sorcerer/pkg/config/params"
+	"github.com/dvjn/sorcerer/internal/config/params"
 	"github.com/pborman/getopt/v2"
 )
 
