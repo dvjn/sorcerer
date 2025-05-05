@@ -253,32 +253,10 @@ func (s *Service) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	var exists bool
-	var size int64
-	var digest string
-	var err error
-
-	if !strings.HasPrefix(reference, "sha256:") {
-		exists, _, digest, err = s.storage.HasManifest(name, reference)
-		if err != nil {
-			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
-			return
-		}
-
-		if exists {
-			content, _, err := s.storage.GetManifest(name, digest)
-			if err != nil {
-				sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
-				return
-			}
-			size = int64(len(content))
-		}
-	} else {
-		exists, size, digest, err = s.storage.HasManifest(name, reference)
-		if err != nil {
-			sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
-			return
-		}
+	exists, _, digest, err := s.storage.HasManifest(name, reference)
+	if err != nil {
+		sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
+		return
 	}
 
 	if !exists {
@@ -286,9 +264,23 @@ func (s *Service) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	content, _, err := s.storage.GetManifest(name, digest)
+	if err != nil {
+		sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
+		return
+	}
+
+	size := len(content)
+
 	contentType := "application/vnd.oci.image.manifest.v1+json"
 	if strings.HasSuffix(reference, ".json") || strings.HasSuffix(reference, ".pretty") {
 		contentType = "application/json"
+	}
+	var manifest map[string]any
+	if err := json.Unmarshal(content, &manifest); err == nil {
+		if mt, ok := manifest["mediaType"].(string); ok && mt != "" {
+			contentType = mt
+		}
 	}
 
 	w.Header().Set("Content-Type", contentType)
