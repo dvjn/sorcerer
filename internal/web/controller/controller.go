@@ -7,17 +7,17 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/dvjn/sorcerer/internal/storage"
+	"github.com/dvjn/sorcerer/internal/store"
 	"github.com/go-chi/chi/v5"
 )
 
 type Controller struct {
-	storage storage.Storage
+	store store.Store
 }
 
-func New(storage storage.Storage) *Controller {
+func New(store store.Store) *Controller {
 	return &Controller{
-		storage: storage,
+		store: store,
 	}
 }
 
@@ -41,7 +41,7 @@ func (c *Controller) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	exists, size, err := c.storage.HasBlob(name, digest)
+	exists, size, err := c.store.HasBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 		return
@@ -68,7 +68,7 @@ func (c *Controller) GetBlob(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Range request not fully implemented, returning full blob:", rangeHeader)
 	}
 
-	blob, size, err := c.storage.GetBlob(name, digest)
+	blob, size, err := c.store.GetBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown, err.Error())
 		return
@@ -91,7 +91,7 @@ func (c *Controller) DeleteBlob(w http.ResponseWriter, r *http.Request) {
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	err := c.storage.DeleteBlob(name, digest)
+	err := c.store.DeleteBlob(name, digest)
 	if err != nil {
 		sendError(w, errBlobUnknown, err.Error())
 		return
@@ -106,7 +106,7 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	name := owner + "/" + repository
 
 	if digest := r.URL.Query().Get("digest"); digest != "" {
-		err := c.storage.PutBlob(name, digest, r.Body)
+		err := c.store.PutBlob(name, digest, r.Body)
 		if err != nil {
 			sendError(w, errBlobUploadInvalid, err.Error())
 			return
@@ -122,9 +122,9 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	if digest := r.URL.Query().Get("mount"); digest != "" {
 		from := r.URL.Query().Get("from")
 		if from != "" {
-			err := c.storage.MountBlob(from, name, digest)
+			err := c.store.MountBlob(from, name, digest)
 			if err != nil {
-				uploadID, err := c.storage.InitiateUpload(name)
+				uploadID, err := c.store.InitiateUpload(name)
 				if err != nil {
 					sendError(w, errBlobUploadInvalid, err.Error())
 					return
@@ -145,7 +145,7 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	uploadID, err := c.storage.InitiateUpload(name)
+	uploadID, err := c.store.InitiateUpload(name)
 	if err != nil {
 		sendError(w, errBlobUploadInvalid, err.Error())
 		return
@@ -165,7 +165,7 @@ func (c *Controller) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	reference := chi.URLParam(r, "reference")
 	contentRange := r.Header.Get("Content-Range")
 
-	info, err := c.storage.GetUploadInfo(name, reference)
+	info, err := c.store.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, errBlobUploadUnknown, err.Error())
 		return
@@ -194,7 +194,7 @@ func (c *Controller) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 		end = start + r.ContentLength - 1
 	}
 
-	newOffset, err := c.storage.UploadChunk(name, reference, r.Body, start, end)
+	newOffset, err := c.store.UploadChunk(name, reference, r.Body, start, end)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid range") {
 			sendError(w, errRangeInvalid, err.Error())
@@ -228,7 +228,7 @@ func (c *Controller) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 		content = r.Body
 	}
 
-	err := c.storage.CompleteUpload(name, reference, digest, content)
+	err := c.store.CompleteUpload(name, reference, digest, content)
 	if err != nil {
 		sendError(w, errBlobUploadInvalid, err.Error())
 		return
@@ -246,7 +246,7 @@ func (c *Controller) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request)
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	info, err := c.storage.GetUploadInfo(name, reference)
+	info, err := c.store.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, errBlobUploadUnknown, err.Error())
 		return
@@ -264,7 +264,7 @@ func (c *Controller) CheckManifestExists(w http.ResponseWriter, r *http.Request)
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	exists, _, digest, err := c.storage.HasManifest(name, reference)
+	exists, _, digest, err := c.store.HasManifest(name, reference)
 	if err != nil {
 		sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 		return
@@ -275,7 +275,7 @@ func (c *Controller) CheckManifestExists(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	content, _, err := c.storage.GetManifest(name, digest)
+	content, _, err := c.store.GetManifest(name, digest)
 	if err != nil {
 		sendError(w, errManifestUnknown.WithStatus(http.StatusInternalServerError), err.Error())
 		return
@@ -306,7 +306,7 @@ func (c *Controller) GetManifest(w http.ResponseWriter, r *http.Request) {
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	content, digest, err := c.storage.GetManifest(name, reference)
+	content, digest, err := c.store.GetManifest(name, reference)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return
@@ -339,7 +339,7 @@ func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	digest, err := c.storage.PutManifest(name, reference, body)
+	digest, err := c.store.PutManifest(name, reference, body)
 	if err != nil {
 		sendError(w, errManifestInvalid, err.Error())
 		return
@@ -349,7 +349,7 @@ func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal(body, &manifest); err == nil {
 		if subject, ok := manifest["subject"].(map[string]any); ok {
 			if subjectDigest, ok := subject["digest"].(string); ok {
-				if err := c.storage.UpdateReferrers(name, subjectDigest, body); err != nil {
+				if err := c.store.UpdateReferrers(name, subjectDigest, body); err != nil {
 					fmt.Printf("Error updating referrers: %v\n", err)
 				}
 				w.Header().Set("OCI-Subject", subjectDigest)
@@ -370,13 +370,13 @@ func (c *Controller) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 	reference := chi.URLParam(r, "reference")
 
 	if strings.HasPrefix(reference, "sha256:") {
-		content, _, err := c.storage.GetManifest(name, reference)
+		content, _, err := c.store.GetManifest(name, reference)
 		if err == nil {
 			var manifest map[string]any
 			if err := json.Unmarshal(content, &manifest); err == nil {
 				if subject, ok := manifest["subject"].(map[string]any); ok {
 					if subjectDigest, ok := subject["digest"].(string); ok {
-						if err := c.storage.RemoveReferrer(name, subjectDigest, reference); err != nil {
+						if err := c.store.RemoveReferrer(name, subjectDigest, reference); err != nil {
 							fmt.Printf("Error removing from referrers: %v\n", err)
 						}
 					}
@@ -385,7 +385,7 @@ func (c *Controller) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := c.storage.DeleteManifest(name, reference)
+	err := c.store.DeleteManifest(name, reference)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return
@@ -399,7 +399,7 @@ func (c *Controller) ListTags(w http.ResponseWriter, r *http.Request) {
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 
-	tags, err := c.storage.ListTags(name)
+	tags, err := c.store.ListTags(name)
 	if err != nil {
 		sendError(w, errRepositoryUnknown, err.Error())
 		return
@@ -451,7 +451,7 @@ func (c *Controller) ListReferrers(w http.ResponseWriter, r *http.Request) {
 	digest := chi.URLParam(r, "digest")
 	artifactType := r.URL.Query().Get("artifactType")
 
-	content, err := c.storage.GetReferrers(name, digest, artifactType)
+	content, err := c.store.GetReferrers(name, digest, artifactType)
 	if err != nil {
 		sendError(w, errManifestUnknown, err.Error())
 		return

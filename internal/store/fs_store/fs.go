@@ -1,4 +1,4 @@
-package fs_storage
+package fs_store
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ const (
 	referrersBaseDir = "referrers"
 )
 
-func New(c *config.StorageConfig) (*FS, error) {
+func New(c *config.StoreConfig) (*FS, error) {
 	for _, dir := range []string{
 		filepath.Join(c.Path, blobsBaseDir),
 		filepath.Join(c.Path, manifestsBaseDir),

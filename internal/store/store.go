@@ -1,14 +1,14 @@
-package storage
+package store
 
 import (
 	"io"
 
 	"github.com/dvjn/sorcerer/internal/config"
 	"github.com/dvjn/sorcerer/internal/model"
-	fs_storage "github.com/dvjn/sorcerer/internal/storage/fs"
+	fs_store "github.com/dvjn/sorcerer/internal/store/fs_store"
 )
 
-type Storage interface {
+type Store interface {
 	HasBlob(name, digest string) (bool, int64, error)
 	GetBlob(name, digest string) (io.ReadCloser, int64, error)
 	PutBlob(name, digest string, content io.Reader) error
@@ -32,6 +32,6 @@ type Storage interface {
 	GetUploadInfo(name, id string) (*model.UploadInfo, error)
 }
 
-func New(c *config.StorageConfig) (Storage, error) {
-	return fs_storage.New(c)
+func New(c *config.StoreConfig) (Store, error) {
+	return fs_store.New(c)
 }

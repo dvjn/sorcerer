@@ -49,7 +49,7 @@ Sorcerer can be configured using command-line flags or environment variables:
 
 | Flag                       | Environment Variable     | Default | Description                                                  |
 | -------------------------- | ------------------------ | ------- | ------------------------------------------------------------ |
-| `--storage-path`           | `STORAGE_PATH`           | `data`  | Path to store registry data                                  |
+| `--store-path`             | `STORE_PATH`             | `data`  | Path to store registry data                                  |
 | `--port`                   | `PORT`                   | `3000`  | Port to run the server on                                    |
 | `--auth-user-header`       | `AUTH_USER_HEADER`       | ``      | The header to use for fetching the authenticated user name   |
 | `--auth-groups-header`     | `AUTH_GROUPS_HEADER`     | ``      | The header to use for fetching the authenticated user groups |

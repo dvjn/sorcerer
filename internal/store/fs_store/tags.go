@@ -1,4 +1,4 @@
-package fs_storage
+package fs_store
 
 import (
 	"os"

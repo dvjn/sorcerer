@@ -7,7 +7,7 @@ import (
 
 	"github.com/dvjn/sorcerer/internal/auth"
 	"github.com/dvjn/sorcerer/internal/config"
-	"github.com/dvjn/sorcerer/internal/storage"
+	"github.com/dvjn/sorcerer/internal/store"
 	"github.com/dvjn/sorcerer/internal/web/controller"
 	"github.com/dvjn/sorcerer/internal/web/router"
 )
@@ -15,9 +15,9 @@ import (
 func main() {
 	config := config.LoadConfig()
 
-	storage, err := storage.New(&config.Storage)
+	store, err := store.New(&config.Store)
 	if err != nil {
-		fmt.Printf("Failed to initialize storage: %v\n", err)
+		fmt.Printf("Failed to initialize store: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -27,7 +27,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	controller := controller.New(storage)
+	controller := controller.New(store)
 
 	router := router.New(auth, controller)
 
