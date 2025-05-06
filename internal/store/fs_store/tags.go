@@ -16,7 +16,7 @@ func (s *FS) tagPath(name, tag string) string {
 func (s *FS) ListTags(name string) ([]string, error) {
 	tagDir := s.tagDir(name)
 
-	if err := os.MkdirAll(tagDir, 0755); err != nil {
+	if err := os.MkdirAll(tagDir, 0o755); err != nil {
 		return nil, err
 	}
 

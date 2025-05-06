@@ -26,7 +26,6 @@ func New(store store.Store) *Controller {
 var sorcererBanner []byte
 
 func (c *Controller) Index(w http.ResponseWriter, r *http.Request) {
-
 	w.Write([]byte(sorcererBanner))
 	w.WriteHeader(http.StatusOK)
 }

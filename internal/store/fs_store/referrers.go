@@ -20,7 +20,7 @@ func (s *FS) referrerPath(name, digest string) string {
 
 func (s *FS) GetReferrers(name, digest string, artifactType string) ([]byte, error) {
 	referrerDir := s.referrerDir(name)
-	if err := os.MkdirAll(referrerDir, 0755); err != nil {
+	if err := os.MkdirAll(referrerDir, 0o755); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +111,6 @@ func (s *FS) GetReferrers(name, digest string, artifactType string) ([]byte, err
 
 			return nil
 		})
-
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +133,7 @@ func (s *FS) GetReferrers(name, digest string, artifactType string) ([]byte, err
 			return nil, err
 		}
 
-		if err := os.WriteFile(referrerPath, content, 0644); err != nil {
+		if err := os.WriteFile(referrerPath, content, 0o644); err != nil {
 			fmt.Printf("Failed to cache referrers: %v\n", err)
 		}
 	} else if artifactType != "" {
@@ -192,7 +191,7 @@ func (s *FS) UpdateReferrers(name, digest string, manifest []byte) error {
 	manifestDigest := "sha256:" + hex.EncodeToString(hasher.Sum(nil))
 
 	referrerDir := s.referrerDir(name)
-	if err := os.MkdirAll(referrerDir, 0755); err != nil {
+	if err := os.MkdirAll(referrerDir, 0o755); err != nil {
 		return err
 	}
 
@@ -283,7 +282,7 @@ func (s *FS) UpdateReferrers(name, digest string, manifest []byte) error {
 		return err
 	}
 
-	return os.WriteFile(referrerPath, updatedContent, 0644)
+	return os.WriteFile(referrerPath, updatedContent, 0o644)
 }
 
 func (s *FS) RemoveReferrer(name, digest, manifestDigest string) error {
@@ -326,5 +325,5 @@ func (s *FS) RemoveReferrer(name, digest, manifestDigest string) error {
 		return err
 	}
 
-	return os.WriteFile(referrerPath, updatedContent, 0644)
+	return os.WriteFile(referrerPath, updatedContent, 0o644)
 }

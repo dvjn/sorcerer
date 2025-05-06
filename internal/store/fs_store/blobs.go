@@ -50,7 +50,7 @@ func (s *FS) GetBlob(name, digest string) (io.ReadCloser, int64, error) {
 
 func (s *FS) PutBlob(name, digest string, content io.Reader) error {
 	dir := s.blobDir(name)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
@@ -111,7 +111,7 @@ func (s *FS) MountBlob(fromName, toName, digest string) error {
 	}
 
 	destDir := s.blobDir(toName)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return err
 	}
 

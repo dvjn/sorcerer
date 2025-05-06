@@ -59,7 +59,7 @@ func (s *FS) GetManifest(name, reference string) ([]byte, string, error) {
 	if strings.HasPrefix(reference, "sha256:") {
 		manifestDir := s.manifestDir(name)
 
-		if err := os.MkdirAll(manifestDir, 0755); err != nil {
+		if err := os.MkdirAll(manifestDir, 0o755); err != nil {
 			return nil, "", err
 		}
 
@@ -92,7 +92,6 @@ func (s *FS) GetManifest(name, reference string) ([]byte, string, error) {
 
 			return nil
 		})
-
 		if err != nil {
 			return nil, "", err
 		}
@@ -145,25 +144,25 @@ func (s *FS) PutManifest(name, reference string, content []byte) (string, error)
 
 	// Create manifest directory
 	manifestDir := s.manifestDir(name)
-	if err := os.MkdirAll(manifestDir, 0755); err != nil {
+	if err := os.MkdirAll(manifestDir, 0o755); err != nil {
 		return "", err
 	}
 
 	// Store by digest
 	digestPath := s.manifestPath(name, digest)
-	if err := os.WriteFile(digestPath, content, 0644); err != nil {
+	if err := os.WriteFile(digestPath, content, 0o644); err != nil {
 		return "", err
 	}
 
 	// If reference is a tag, create/update tag
 	if !strings.HasPrefix(reference, "sha256:") {
 		tagDir := s.tagDir(name)
-		if err := os.MkdirAll(tagDir, 0755); err != nil {
+		if err := os.MkdirAll(tagDir, 0o755); err != nil {
 			return "", err
 		}
 
 		tagPath := s.tagPath(name, reference)
-		if err := os.WriteFile(tagPath, []byte(digest), 0644); err != nil {
+		if err := os.WriteFile(tagPath, []byte(digest), 0o644); err != nil {
 			return "", err
 		}
 	}
@@ -204,7 +203,6 @@ func (s *FS) DeleteManifest(name, reference string) error {
 
 			return nil
 		})
-
 		if err != nil {
 			fmt.Printf("Error cleaning up tags: %v\n", err)
 		}

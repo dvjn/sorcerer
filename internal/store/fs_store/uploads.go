@@ -24,7 +24,7 @@ func (s *FS) InitiateUpload(name string) (string, error) {
 	uploadID := fmt.Sprintf("%x", time.Now().UnixNano())
 
 	uploadDir := s.uploadDir(name)
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 		return "", err
 	}
 
@@ -69,7 +69,7 @@ func (s *FS) UploadChunk(name, id string, content io.Reader, start int64, end in
 		return 0, fmt.Errorf("invalid range: start position %d does not match current offset %d", start, upload.Offset)
 	}
 
-	file, err := os.OpenFile(upload.Path, os.O_WRONLY, 0644)
+	file, err := os.OpenFile(upload.Path, os.O_WRONLY, 0o644)
 	if err != nil {
 		return 0, err
 	}
@@ -106,7 +106,7 @@ func (s *FS) CompleteUpload(name, id, digest string, content io.Reader) error {
 	}
 
 	if content != nil {
-		file, err := os.OpenFile(upload.Path, os.O_WRONLY, 0644)
+		file, err := os.OpenFile(upload.Path, os.O_WRONLY, 0o644)
 		if err != nil {
 			return err
 		}
@@ -147,7 +147,7 @@ func (s *FS) CompleteUpload(name, id, digest string, content io.Reader) error {
 	}
 
 	blobDir := s.blobDir(name)
-	if err := os.MkdirAll(blobDir, 0755); err != nil {
+	if err := os.MkdirAll(blobDir, 0o755); err != nil {
 		return err
 	}
 

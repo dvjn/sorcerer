@@ -32,7 +32,7 @@ func New(c *config.StoreConfig) (*FS, error) {
 		filepath.Join(c.Path, tagsBaseDir),
 		filepath.Join(c.Path, referrersBaseDir),
 	} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}

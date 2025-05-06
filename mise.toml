@@ -1,5 +1,6 @@
 [tools]
 go = "1.24"
+"go:mvdan.cc/gofumpt" = "latest"
 watchexec = "latest"
 
 [tasks.start]
@@ -13,3 +14,7 @@ outputs = ["./tmp/sorcerer"]
 
 [tasks.dev]
 run = "mise watch -r start"
+
+[tasks.fmt]
+run = "gofumpt -l -w ."
+sources = ["**/*.go"]
