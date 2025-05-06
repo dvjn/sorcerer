@@ -13,7 +13,20 @@ import (
 )
 
 func main() {
-	config := config.LoadConfig()
+	config, err := config.Load()
+	if err != nil {
+		fmt.Printf("Failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	errors := config.Validate()
+	if len(errors) > 0 {
+		fmt.Println("Config validations failed:")
+		for _, err := range errors {
+			fmt.Printf("  - %v\n", err)
+		}
+		os.Exit(1)
+	}
 
 	store, err := store.New(&config.Store)
 	if err != nil {

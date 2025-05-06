@@ -1,110 +1,74 @@
 package config
 
 import (
-	"os"
+	"fmt"
+	"strings"
 
-	"github.com/dvjn/sorcerer/internal/config/params"
-	"github.com/pborman/getopt/v2"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/structs"
+	"github.com/knadh/koanf/v2"
 )
 
-type ProxyHeaderAuth struct {
-	UserHeaderName        string
-	GroupsHeaderName      string
-	GroupsHeaderSeparator string
+const (
+	AUTH_MODE_NONE         = "none"
+	AUTH_MODE_PROXY_HEADER = "proxy-header"
+)
+
+type ProxyHeaderAuthConfig struct {
+	UserHeaderName        string `koanf:"user_header_name"`
+	GroupsHeaderName      string `koanf:"groups_header_name"`
+	GroupsHeaderSeparator string `koanf:"groups_header_separator"`
 }
 
 type AuthConfig struct {
-	Mode            string
-	ProxyHeaderAuth ProxyHeaderAuth
+	Mode        string                `koanf:"mode"`
+	ProxyHeader ProxyHeaderAuthConfig `koanf:"proxy_header"`
 }
 
 type StoreConfig struct {
-	Path string
+	Path string `koanf:"path"`
 }
 
 type Config struct {
-	Port  int
-	Store StoreConfig
-	Auth  AuthConfig
+	Port  int         `koanf:"port"`
+	Store StoreConfig `koanf:"store"`
+	Auth  AuthConfig  `koanf:"auth"`
 }
 
-type param interface {
-	SetDefault()
-	RegisterFlag()
-	LoadFromEnv()
+func Load() (*Config, error) {
+	k := koanf.New("__")
+	config := Config{}
+
+	k.Load(structs.Provider(Config{
+		Port: 3000,
+		Store: StoreConfig{
+			Path: "data",
+		},
+		Auth: AuthConfig{
+			Mode: AUTH_MODE_NONE,
+			ProxyHeader: ProxyHeaderAuthConfig{
+				GroupsHeaderSeparator: ",",
+			},
+		},
+	}, "koanf"), nil)
+
+	k.Load(env.Provider("", "__", func(s string) string {
+		return strings.ToLower(s)
+	}), nil)
+
+	if err := k.Unmarshal("", &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
-func LoadConfig() *Config {
-	var config Config
+func (c *Config) Validate() []error {
+	errors := []error{}
 
-	params := []param{
-		&params.String{
-			Field:      &config.Store.Path,
-			FlagName:   "store-path",
-			EnvName:    "STORE_PATH",
-			DefaultVal: "data",
-			Usage:      "registry data store path",
-		},
-		&params.Int{
-			Field:      &config.Port,
-			FlagName:   "port",
-			EnvName:    "PORT",
-			DefaultVal: 3000,
-			Usage:      "The port to run the server on",
-		},
-		&params.String{
-			Field:      &config.Auth.Mode,
-			FlagName:   "auth-mode",
-			EnvName:    "AUTH_MODE",
-			DefaultVal: "none",
-			Usage:      "Should be one of none, proxy-header",
-		},
-		&params.String{
-			Field:      &config.Auth.ProxyHeaderAuth.UserHeaderName,
-			FlagName:   "auth-user-header",
-			EnvName:    "AUTH_USER_HEADER",
-			DefaultVal: "",
-			Usage:      "The header to use for fetching the user name",
-		},
-		&params.String{
-			Field:      &config.Auth.ProxyHeaderAuth.GroupsHeaderName,
-			FlagName:   "auth-groups-header",
-			EnvName:    "AUTH_GROUPS_HEADER",
-			DefaultVal: "",
-			Usage:      "The header to use for fetching the user groups",
-		},
-		&params.String{
-			Field:      &config.Auth.ProxyHeaderAuth.GroupsHeaderSeparator,
-			FlagName:   "auth-groups-header-sep",
-			EnvName:    "AUTH_GROUPS_HEADER_SEP",
-			DefaultVal: ",",
-			Usage:      "The separator to use for the groups",
-		},
+	if c.Auth.Mode == AUTH_MODE_PROXY_HEADER && c.Auth.ProxyHeader.UserHeaderName == "" {
+		errors = append(errors, fmt.Errorf("auth.proxy_header.user_header_name must be set when auth.mode is %s", AUTH_MODE_PROXY_HEADER))
 	}
 
-	helpFlag := getopt.BoolLong("help", 'h', "display help")
-
-	loadParameters(params)
-
-	if *helpFlag {
-		getopt.Usage()
-		os.Exit(0)
-	}
-
-	return &config
-}
-
-func loadParameters(params []param) {
-	for _, p := range params {
-		p.SetDefault()
-	}
-
-	for _, p := range params {
-		p.RegisterFlag()
-	}
-	getopt.Parse()
-
-	for _, p := range params {
-		p.LoadFromEnv()
-	}
+	return errors
 }

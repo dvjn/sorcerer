@@ -45,15 +45,16 @@ sorcerer
 
 ## Configuration
 
-Sorcerer can be configured using command-line flags or environment variables:
+Sorcerer can be configured using the following environment variables:
 
-| Flag                       | Environment Variable     | Default | Description                                                  |
-| -------------------------- | ------------------------ | ------- | ------------------------------------------------------------ |
-| `--store-path`             | `STORE_PATH`             | `data`  | Path to store registry data                                  |
-| `--port`                   | `PORT`                   | `3000`  | Port to run the server on                                    |
-| `--auth-user-header`       | `AUTH_USER_HEADER`       | ``      | The header to use for fetching the authenticated user name   |
-| `--auth-groups-header`     | `AUTH_GROUPS_HEADER`     | ``      | The header to use for fetching the authenticated user groups |
-| `--auth-groups-header-sep` | `AUTH_GROUPS_HEADER_SEP` | `,`     | The separator for the user groups                            |
+| Environment Variable                          | Default      | Description                                                                          |
+| --------------------------------------------- | ------------ | ------------------------------------------------------------------------------------ |
+| `PORT`                                        | `3000`       | Port to run the server on.                                                           |
+| `STORE__PATH`                                 | `data`       | Path to store registry data.                                                         |
+| `AUTH__MODE`                                  | `none`       | Authentication mode. Can be `none` or `proxy-header`.                                |
+| `AUTH__PROXY_HEADER__USER_HEADER_NAME`        | (empty)      | Header name to get the authenticated user from when `AUTH__MODE` is `proxy-header`.  |
+| `AUTH__PROXY_HEADER__GROUPS_HEADER_NAME`      | (empty)      | Header name to get the user's groups from when `AUTH__MODE` is `proxy-header`.       |
+| `AUTH__PROXY_HEADER__GROUPS_HEADER_SEPARATOR` | `,`          | Separator for user groups in the header when `AUTH__MODE` is `proxy-header`.         |
 
 
 ## License

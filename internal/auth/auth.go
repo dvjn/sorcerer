@@ -15,10 +15,10 @@ type Auth interface {
 
 func New(c *config.Config) (Auth, error) {
 	switch c.Auth.Mode {
-	case "none":
+	case config.AUTH_MODE_NONE:
 		return no_auth.New(), nil
-	case "proxy-header":
-		return proxy_header_auth.New(&c.Auth.ProxyHeaderAuth), nil
+	case config.AUTH_MODE_PROXY_HEADER:
+		return proxy_header_auth.New(&c.Auth.ProxyHeader), nil
 	}
 
 	return nil, fmt.Errorf("invalid auth mode: %s", c.Auth.Mode)

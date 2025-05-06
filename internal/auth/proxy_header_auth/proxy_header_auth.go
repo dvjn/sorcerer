@@ -11,10 +11,10 @@ import (
 )
 
 type ProxyHeaderAuth struct {
-	c *config.ProxyHeaderAuth
+	c *config.ProxyHeaderAuthConfig
 }
 
-func New(c *config.ProxyHeaderAuth) *ProxyHeaderAuth {
+func New(c *config.ProxyHeaderAuthConfig) *ProxyHeaderAuth {
 	return &ProxyHeaderAuth{c}
 }
 
