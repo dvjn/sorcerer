@@ -1,6 +1,7 @@
 package controller
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -21,8 +22,12 @@ func New(store store.Store) *Controller {
 	}
 }
 
+//go:embed banner.txt
+var sorcererBanner []byte
+
 func (c *Controller) Index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("sorcerer"))
+
+	w.Write([]byte(sorcererBanner))
 	w.WriteHeader(http.StatusOK)
 }
 
