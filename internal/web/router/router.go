@@ -11,7 +11,9 @@ func New(auth auth.Auth, controller web.Controller) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Heartbeat("/healthz"))
+
+	r.Get("/", controller.Index)
+	r.Get("/healthz", controller.Heartbeat)
 
 	r.Route("/v2", func(r chi.Router) {
 		r.Get("/", controller.ApiVersionCheck)

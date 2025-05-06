@@ -3,6 +3,9 @@ package web
 import "net/http"
 
 type Controller interface {
+	Index(w http.ResponseWriter, r *http.Request)
+	Heartbeat(w http.ResponseWriter, r *http.Request)
+
 	ApiVersionCheck(w http.ResponseWriter, r *http.Request)
 
 	CheckBlobExists(w http.ResponseWriter, r *http.Request)

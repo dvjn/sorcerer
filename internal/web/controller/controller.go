@@ -21,6 +21,16 @@ func New(storage storage.Storage) *Controller {
 	}
 }
 
+func (c *Controller) Index(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("sorcerer"))
+	w.WriteHeader(http.StatusOK)
+}
+
+func (c *Controller) Heartbeat(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("."))
+	w.WriteHeader(http.StatusOK)
+}
+
 func (c *Controller) ApiVersionCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
