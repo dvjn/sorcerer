@@ -21,7 +21,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	auth := auth.NewAuth(config)
+	auth, err := auth.NewAuth(config)
+	if err != nil {
+		fmt.Printf("Failed to initialize auth: %v\n", err)
+		os.Exit(1)
+	}
 
 	service := service.NewService(storage)
 

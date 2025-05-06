@@ -7,10 +7,15 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
+type ProxyHeaderAuth struct {
+	UserHeaderName        string
+	GroupsHeaderName      string
+	GroupsHeaderSeparator string
+}
+
 type AuthConfig struct {
-	UserHeader      string
-	GroupsHeader    string
-	GroupsHeaderSep string
+	Mode            string
+	ProxyHeaderAuth ProxyHeaderAuth
 }
 
 type Config struct {
@@ -44,21 +49,28 @@ func LoadConfig() *Config {
 			Usage:      "The port to run the server on",
 		},
 		&params.String{
-			Field:      &config.Auth.UserHeader,
+			Field:      &config.Auth.Mode,
+			FlagName:   "auth-mode",
+			EnvName:    "AUTH_MODE",
+			DefaultVal: "",
+			Usage:      "Should be one of none, proxy-header",
+		},
+		&params.String{
+			Field:      &config.Auth.ProxyHeaderAuth.UserHeaderName,
 			FlagName:   "auth-user-header",
 			EnvName:    "AUTH_USER_HEADER",
 			DefaultVal: "",
 			Usage:      "The header to use for fetching the user name",
 		},
 		&params.String{
-			Field:      &config.Auth.GroupsHeader,
+			Field:      &config.Auth.ProxyHeaderAuth.GroupsHeaderName,
 			FlagName:   "auth-groups-header",
 			EnvName:    "AUTH_GROUPS_HEADER",
 			DefaultVal: "",
 			Usage:      "The header to use for fetching the user groups",
 		},
 		&params.String{
-			Field:      &config.Auth.GroupsHeaderSep,
+			Field:      &config.Auth.ProxyHeaderAuth.GroupsHeaderSeparator,
 			FlagName:   "auth-groups-header-sep",
 			EnvName:    "AUTH_GROUPS_HEADER_SEP",
 			DefaultVal: ",",
