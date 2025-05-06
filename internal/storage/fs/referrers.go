@@ -1,4 +1,4 @@
-package storage
+package fs_storage
 
 import (
 	"crypto/sha256"
@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 )
 
-func (s *Storage) referrerDir(name string) string {
+func (s *FS) referrerDir(name string) string {
 	return filepath.Join(s.root, referrersBaseDir, name)
 }
 
-func (s *Storage) referrerPath(name, digest string) string {
+func (s *FS) referrerPath(name, digest string) string {
 	return filepath.Join(s.referrerDir(name), digest)
 }
 
-func (s *Storage) GetReferrers(name, digest string, artifactType string) ([]byte, error) {
+func (s *FS) GetReferrers(name, digest string, artifactType string) ([]byte, error) {
 	referrerDir := s.referrerDir(name)
 	if err := os.MkdirAll(referrerDir, 0755); err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (s *Storage) GetReferrers(name, digest string, artifactType string) ([]byte
 	return content, nil
 }
 
-func (s *Storage) UpdateReferrers(name, digest string, manifest []byte) error {
+func (s *FS) UpdateReferrers(name, digest string, manifest []byte) error {
 	var m map[string]any
 	if err := json.Unmarshal(manifest, &m); err != nil {
 		return err
@@ -286,7 +286,7 @@ func (s *Storage) UpdateReferrers(name, digest string, manifest []byte) error {
 	return os.WriteFile(referrerPath, updatedContent, 0644)
 }
 
-func (s *Storage) RemoveReferrer(name, digest, manifestDigest string) error {
+func (s *FS) RemoveReferrer(name, digest, manifestDigest string) error {
 	referrerPath := s.referrerPath(name, digest)
 
 	content, err := os.ReadFile(referrerPath)

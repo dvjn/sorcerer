@@ -4,24 +4,22 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dvjn/sorcerer/internal/auth/no_auth"
+	"github.com/dvjn/sorcerer/internal/auth/proxy_header_auth"
 	"github.com/dvjn/sorcerer/internal/config"
 )
 
-type Auth struct {
-	middleware func(next http.Handler) http.Handler
+type Auth interface {
+	Middleware(next http.Handler) http.Handler
 }
 
-func NewAuth(config *config.Config) (*Auth, error) {
-	switch config.Auth.Mode {
+func New(c *config.Config) (Auth, error) {
+	switch c.Auth.Mode {
 	case "none":
-		return &Auth{middleware: noAuthMiddleware()}, nil
+		return no_auth.New(), nil
 	case "proxy-header":
-		return &Auth{middleware: proxyHeaderAuthMiddleware(&config.Auth.ProxyHeaderAuth)}, nil
+		return proxy_header_auth.New(&c.Auth.ProxyHeaderAuth), nil
 	}
 
-	return nil, fmt.Errorf("invalid auth mode: %s", config.Auth.Mode)
-}
-
-func (a *Auth) Middleware(next http.Handler) http.Handler {
-	return a.middleware(next)
+	return nil, fmt.Errorf("invalid auth mode: %s", c.Auth.Mode)
 }

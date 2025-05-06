@@ -1,4 +1,4 @@
-package storage
+package fs_storage
 
 import (
 	"crypto/sha256"
@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 )
 
-func (s *Storage) blobDir(name string) string {
+func (s *FS) blobDir(name string) string {
 	return filepath.Join(s.root, blobsBaseDir, name)
 }
 
-func (s *Storage) blobPath(name, digest string) string {
+func (s *FS) blobPath(name, digest string) string {
 	return filepath.Join(s.blobDir(name), digest)
 }
 
-func (s *Storage) HasBlob(name, digest string) (bool, int64, error) {
+func (s *FS) HasBlob(name, digest string) (bool, int64, error) {
 	path := s.blobPath(name, digest)
 	info, err := os.Stat(path)
 	if err != nil {
@@ -29,7 +29,7 @@ func (s *Storage) HasBlob(name, digest string) (bool, int64, error) {
 	return true, info.Size(), nil
 }
 
-func (s *Storage) GetBlob(name, digest string) (io.ReadCloser, int64, error) {
+func (s *FS) GetBlob(name, digest string) (io.ReadCloser, int64, error) {
 	path := s.blobPath(name, digest)
 	file, err := os.Open(path)
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *Storage) GetBlob(name, digest string) (io.ReadCloser, int64, error) {
 	return file, info.Size(), nil
 }
 
-func (s *Storage) PutBlob(name, digest string, content io.Reader) error {
+func (s *FS) PutBlob(name, digest string, content io.Reader) error {
 	dir := s.blobDir(name)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
@@ -90,7 +90,7 @@ func (s *Storage) PutBlob(name, digest string, content io.Reader) error {
 	return nil
 }
 
-func (s *Storage) DeleteBlob(name, digest string) error {
+func (s *FS) DeleteBlob(name, digest string) error {
 	path := s.blobPath(name, digest)
 	if err := os.Remove(path); err != nil {
 		if os.IsNotExist(err) {
@@ -101,7 +101,7 @@ func (s *Storage) DeleteBlob(name, digest string) error {
 	return nil
 }
 
-func (s *Storage) MountBlob(fromName, toName, digest string) error {
+func (s *FS) MountBlob(fromName, toName, digest string) error {
 	sourcePath := s.blobPath(fromName, digest)
 	if _, err := os.Stat(sourcePath); err != nil {
 		if os.IsNotExist(err) {

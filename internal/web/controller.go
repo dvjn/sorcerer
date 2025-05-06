@@ -1,8 +1,8 @@
-package router
+package web
 
 import "net/http"
 
-type Service interface {
+type Controller interface {
 	ApiVersionCheck(w http.ResponseWriter, r *http.Request)
 
 	CheckBlobExists(w http.ResponseWriter, r *http.Request)

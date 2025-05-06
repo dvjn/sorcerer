@@ -1,10 +1,8 @@
-package service
+package controller
 
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/dvjn/sorcerer/internal/models"
 )
 
 type RegistryError struct {
@@ -107,9 +105,18 @@ func (e *RegistryError) WithStatus(status int) *RegistryError {
 	}
 }
 
+type RegistryErrorResponse struct {
+	Errors []RegistryErrorDetail `json:"errors"`
+}
+
+type RegistryErrorDetail struct {
+	Code    string `json:"code"`
+	Message string `json:"message,omitempty"`
+}
+
 func sendError(w http.ResponseWriter, err *RegistryError, message string) {
-	errorResponse := models.ErrorResponse{
-		Errors: []models.Error{
+	response := RegistryErrorResponse{
+		Errors: []RegistryErrorDetail{
 			{
 				Code:    err.Code,
 				Message: message,
@@ -119,5 +126,5 @@ func sendError(w http.ResponseWriter, err *RegistryError, message string) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(err.Status)
-	json.NewEncoder(w).Encode(errorResponse)
+	json.NewEncoder(w).Encode(response)
 }

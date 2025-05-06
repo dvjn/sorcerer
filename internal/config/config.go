@@ -18,10 +18,14 @@ type AuthConfig struct {
 	ProxyHeaderAuth ProxyHeaderAuth
 }
 
+type StorageConfig struct {
+	Path string
+}
+
 type Config struct {
-	StoragePath string
-	Port        int
-	Auth        AuthConfig
+	Port    int
+	Storage StorageConfig
+	Auth    AuthConfig
 }
 
 type param interface {
@@ -35,7 +39,7 @@ func LoadConfig() *Config {
 
 	params := []param{
 		&params.String{
-			Field:      &config.StoragePath,
+			Field:      &config.Storage.Path,
 			FlagName:   "storage-path",
 			EnvName:    "STORAGE_PATH",
 			DefaultVal: "data",
@@ -52,7 +56,7 @@ func LoadConfig() *Config {
 			Field:      &config.Auth.Mode,
 			FlagName:   "auth-mode",
 			EnvName:    "AUTH_MODE",
-			DefaultVal: "",
+			DefaultVal: "none",
 			Usage:      "Should be one of none, proxy-header",
 		},
 		&params.String{

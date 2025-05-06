@@ -1,19 +1,19 @@
-package storage
+package fs_storage
 
 import (
 	"os"
 	"path/filepath"
 )
 
-func (s *Storage) tagDir(name string) string {
+func (s *FS) tagDir(name string) string {
 	return filepath.Join(s.root, tagsBaseDir, name)
 }
 
-func (s *Storage) tagPath(name, tag string) string {
+func (s *FS) tagPath(name, tag string) string {
 	return filepath.Join(s.tagDir(name), tag)
 }
 
-func (s *Storage) ListTags(name string) ([]string, error) {
+func (s *FS) ListTags(name string) ([]string, error) {
 	tagDir := s.tagDir(name)
 
 	if err := os.MkdirAll(tagDir, 0755); err != nil {

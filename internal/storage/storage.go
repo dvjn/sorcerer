@@ -1,9 +1,11 @@
-package service
+package storage
 
 import (
 	"io"
 
-	"github.com/dvjn/sorcerer/internal/models"
+	"github.com/dvjn/sorcerer/internal/config"
+	"github.com/dvjn/sorcerer/internal/model"
+	fs_storage "github.com/dvjn/sorcerer/internal/storage/fs"
 )
 
 type Storage interface {
@@ -27,5 +29,9 @@ type Storage interface {
 	InitiateUpload(name string) (string, error)
 	UploadChunk(name, id string, content io.Reader, start int64, end int64) (int64, error)
 	CompleteUpload(name, id, digest string, content io.Reader) error
-	GetUploadInfo(name, id string) (*models.UploadInfo, error)
+	GetUploadInfo(name, id string) (*model.UploadInfo, error)
+}
+
+func New(c *config.StorageConfig) (Storage, error) {
+	return fs_storage.New(c)
 }

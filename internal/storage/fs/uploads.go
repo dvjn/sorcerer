@@ -1,4 +1,4 @@
-package storage
+package fs_storage
 
 import (
 	"crypto/sha256"
@@ -9,18 +9,18 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dvjn/sorcerer/internal/models"
+	"github.com/dvjn/sorcerer/internal/model"
 )
 
-func (s *Storage) uploadDir(name string) string {
+func (s *FS) uploadDir(name string) string {
 	return filepath.Join(s.root, uploadsBaseDir, name)
 }
 
-func (s *Storage) uploadPath(name, id string) string {
+func (s *FS) uploadPath(name, id string) string {
 	return filepath.Join(s.uploadDir(name), id)
 }
 
-func (s *Storage) InitiateUpload(name string) (string, error) {
+func (s *FS) InitiateUpload(name string) (string, error) {
 	uploadID := fmt.Sprintf("%x", time.Now().UnixNano())
 
 	uploadDir := s.uploadDir(name)
@@ -36,7 +36,7 @@ func (s *Storage) InitiateUpload(name string) (string, error) {
 	defer file.Close()
 
 	s.uploadsMu.Lock()
-	s.uploads[uploadID] = &models.UploadInfo{
+	s.uploads[uploadID] = &model.UploadInfo{
 		Name:      name,
 		ID:        uploadID,
 		Path:      uploadPath,
@@ -49,7 +49,7 @@ func (s *Storage) InitiateUpload(name string) (string, error) {
 	return uploadID, nil
 }
 
-func (s *Storage) UploadChunk(name, id string, content io.Reader, start int64, end int64) (int64, error) {
+func (s *FS) UploadChunk(name, id string, content io.Reader, start int64, end int64) (int64, error) {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()
@@ -92,7 +92,7 @@ func (s *Storage) UploadChunk(name, id string, content io.Reader, start int64, e
 	return upload.Offset, nil
 }
 
-func (s *Storage) CompleteUpload(name, id, digest string, content io.Reader) error {
+func (s *FS) CompleteUpload(name, id, digest string, content io.Reader) error {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()
@@ -163,7 +163,7 @@ func (s *Storage) CompleteUpload(name, id, digest string, content io.Reader) err
 	return nil
 }
 
-func (s *Storage) GetUploadInfo(name, id string) (*models.UploadInfo, error) {
+func (s *FS) GetUploadInfo(name, id string) (*model.UploadInfo, error) {
 	s.uploadsMu.RLock()
 	upload, exists := s.uploads[id]
 	s.uploadsMu.RUnlock()

@@ -1,4 +1,4 @@
-package storage
+package fs_storage
 
 import (
 	"crypto/sha256"
@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-func (s *Storage) manifestDir(name string) string {
+func (s *FS) manifestDir(name string) string {
 	return filepath.Join(s.root, manifestsBaseDir, name)
 }
 
-func (s *Storage) manifestPath(name, reference string) string {
+func (s *FS) manifestPath(name, reference string) string {
 	return filepath.Join(s.manifestDir(name), reference)
 }
 
-func (s *Storage) HasManifest(name, reference string) (bool, int64, string, error) {
+func (s *FS) HasManifest(name, reference string) (bool, int64, string, error) {
 	isDigest := strings.HasPrefix(reference, "sha256:")
 
 	if isDigest {
@@ -55,7 +55,7 @@ func (s *Storage) HasManifest(name, reference string) (bool, int64, string, erro
 }
 
 // GetManifest retrieves a manifest
-func (s *Storage) GetManifest(name, reference string) ([]byte, string, error) {
+func (s *FS) GetManifest(name, reference string) ([]byte, string, error) {
 	if strings.HasPrefix(reference, "sha256:") {
 		manifestDir := s.manifestDir(name)
 
@@ -137,7 +137,7 @@ func (s *Storage) GetManifest(name, reference string) ([]byte, string, error) {
 }
 
 // PutManifest stores a manifest
-func (s *Storage) PutManifest(name, reference string, content []byte) (string, error) {
+func (s *FS) PutManifest(name, reference string, content []byte) (string, error) {
 	// Calculate digest
 	hasher := sha256.New()
 	hasher.Write(content)
@@ -171,7 +171,7 @@ func (s *Storage) PutManifest(name, reference string, content []byte) (string, e
 	return digest, nil
 }
 
-func (s *Storage) DeleteManifest(name, reference string) error {
+func (s *FS) DeleteManifest(name, reference string) error {
 	isDigest := strings.HasPrefix(reference, "sha256:")
 
 	if isDigest {
