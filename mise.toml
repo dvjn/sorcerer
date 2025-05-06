@@ -1,0 +1,15 @@
+[tools]
+go = "1.24"
+watchexec = "latest"
+
+[tasks.start]
+run = "go run ./cmd/sorcerer"
+sources = ["**/*.go", "go.mod", "go.sum"]
+
+[tasks.build]
+run = "go build -o ./tmp/sorcerer ./cmd/sorcerer"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["./tmp/sorcerer"]
+
+[tasks.dev]
+run = "mise watch -r start"
