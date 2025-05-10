@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dvjn/sorcerer/internal/auth"
 	"github.com/dvjn/sorcerer/internal/config"
 	"github.com/dvjn/sorcerer/internal/store"
 	"github.com/dvjn/sorcerer/internal/web/controller"
@@ -34,15 +33,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	auth, err := auth.New(config)
-	if err != nil {
-		fmt.Printf("Failed to initialize auth: %v\n", err)
-		os.Exit(1)
-	}
-
 	controller := controller.New(store)
 
-	router := router.New(auth, controller)
+	router := router.New(controller)
 
 	fmt.Printf("Starting server on port %d\n", config.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), router)

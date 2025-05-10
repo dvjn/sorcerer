@@ -1,13 +1,12 @@
 package router
 
 import (
-	"github.com/dvjn/sorcerer/internal/auth"
 	"github.com/dvjn/sorcerer/internal/web"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func New(auth auth.Auth, controller web.Controller) *chi.Mux {
+func New(controller web.Controller) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -19,8 +18,6 @@ func New(auth auth.Auth, controller web.Controller) *chi.Mux {
 		r.Get("/", controller.ApiVersionCheck)
 
 		r.Route("/{owner}/{repository}", func(r chi.Router) {
-			r.Use(auth.Middleware)
-
 			r.Route("/blobs", func(r chi.Router) {
 				r.Head("/{digest}", controller.CheckBlobExists)
 				r.Get("/{digest}", controller.GetBlob)
