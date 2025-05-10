@@ -8,15 +8,17 @@ import (
 )
 
 type Distribution struct {
-	store store.Store
+	store          store.Store
+	authMiddleware func(http.Handler) http.Handler
 }
 
-func New(store store.Store) *Distribution {
-	return &Distribution{store: store}
+func New(store store.Store, authMiddleware func(http.Handler) http.Handler) *Distribution {
+	return &Distribution{store: store, authMiddleware: authMiddleware}
 }
 
 func (d *Distribution) Router() *chi.Mux {
 	r := chi.NewRouter()
+	r.Use(d.authMiddleware)
 
 	r.Get("/", d.apiVersionCheck)
 

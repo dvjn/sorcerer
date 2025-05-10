@@ -4,17 +4,17 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/dvjn/sorcerer/internal/distribution"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Api struct {
-	distribution *distribution.Distribution
+	distribution http.Handler
+	auth         http.Handler
 }
 
-func New(distribution *distribution.Distribution) *Api {
-	return &Api{distribution: distribution}
+func New(distribution, auth http.Handler) *Api {
+	return &Api{distribution: distribution, auth: auth}
 }
 
 func (a *Api) Router() *chi.Mux {
@@ -25,7 +25,8 @@ func (a *Api) Router() *chi.Mux {
 	r.Get("/", a.index)
 	r.Get("/healthz", a.heartbeat)
 
-	r.Mount("/v2", a.distribution.Router())
+	r.Mount("/v2", a.distribution)
+	r.Mount("/auth", a.auth)
 
 	return r
 }
