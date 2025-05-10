@@ -1,6 +1,10 @@
 #! /usr/bin/env bash
 
+#MISE env={ CGO_ENABLED="0" }
 #MISE sources=["cmd/**/*.go", "internal/**/*.go", "go.mod", "go.sum"]
-#MISE outputs=["./tmp/sorcerer"]
+#MISE outputs=["./bin/sorcerer-${GOOS}-${GOARCH}"]
 
-go build -o ./tmp/sorcerer ./cmd/sorcerer
+GOOS=${GOOS:-linux}
+GOARCH=${GOARCH:-amd64}
+
+go build -o ./bin/sorcerer-${GOOS}-${GOARCH} ./cmd/sorcerer
