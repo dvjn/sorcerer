@@ -1,4 +1,4 @@
-package controller
+package distribution
 
 import (
 	"encoding/json"
@@ -10,13 +10,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (c *Controller) CheckManifestExists(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) checkManifestExists(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	exists, _, digest, err := c.store.HasManifest(name, reference)
+	exists, _, digest, err := d.store.HasManifest(name, reference)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, errManifestUnknown, err.Error())
 		return
@@ -27,7 +27,7 @@ func (c *Controller) CheckManifestExists(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	content, _, err := c.store.GetManifest(name, digest)
+	content, _, err := d.store.GetManifest(name, digest)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, errManifestUnknown, err.Error())
 		return
@@ -52,13 +52,13 @@ func (c *Controller) CheckManifestExists(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *Controller) GetManifest(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) getManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	content, digest, err := c.store.GetManifest(name, reference)
+	content, digest, err := d.store.GetManifest(name, reference)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errManifestUnknown, err.Error())
 		return
@@ -79,7 +79,7 @@ func (c *Controller) GetManifest(w http.ResponseWriter, r *http.Request) {
 	w.Write(content)
 }
 
-func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) putManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -91,7 +91,7 @@ func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	digest, err := c.store.PutManifest(name, reference, body)
+	digest, err := d.store.PutManifest(name, reference, body)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, errManifestInvalid, err.Error())
 		return
@@ -101,7 +101,7 @@ func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal(body, &manifest); err == nil {
 		if subject, ok := manifest["subject"].(map[string]any); ok {
 			if subjectDigest, ok := subject["digest"].(string); ok {
-				if err := c.store.UpdateReferrers(name, subjectDigest, body); err != nil {
+				if err := d.store.UpdateReferrers(name, subjectDigest, body); err != nil {
 					fmt.Printf("Error updating referrers: %v\n", err)
 				}
 				w.Header().Set("OCI-Subject", subjectDigest)
@@ -115,20 +115,20 @@ func (c *Controller) PutManifest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (c *Controller) DeleteManifest(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) deleteManifest(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
 	if strings.HasPrefix(reference, "sha256:") {
-		content, _, err := c.store.GetManifest(name, reference)
+		content, _, err := d.store.GetManifest(name, reference)
 		if err == nil {
 			var manifest map[string]any
 			if err := json.Unmarshal(content, &manifest); err == nil {
 				if subject, ok := manifest["subject"].(map[string]any); ok {
 					if subjectDigest, ok := subject["digest"].(string); ok {
-						if err := c.store.RemoveReferrer(name, subjectDigest, reference); err != nil {
+						if err := d.store.RemoveReferrer(name, subjectDigest, reference); err != nil {
 							fmt.Printf("Error removing from referrers: %v\n", err)
 						}
 					}
@@ -137,7 +137,7 @@ func (c *Controller) DeleteManifest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := c.store.DeleteManifest(name, reference)
+	err := d.store.DeleteManifest(name, reference)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errManifestUnknown, err.Error())
 		return

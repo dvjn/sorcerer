@@ -4,8 +4,8 @@ import (
 	"io"
 
 	"github.com/dvjn/sorcerer/internal/config"
-	"github.com/dvjn/sorcerer/internal/model"
 	fs_store "github.com/dvjn/sorcerer/internal/store/fs_store"
+	"github.com/dvjn/sorcerer/internal/store/model"
 )
 
 type Store interface {

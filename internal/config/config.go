@@ -8,13 +8,17 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
+type ServerConfig struct {
+	Port int `koanf:"port"`
+}
+
 type StoreConfig struct {
 	Path string `koanf:"path"`
 }
 
 type Config struct {
-	Port  int         `koanf:"port"`
-	Store StoreConfig `koanf:"store"`
+	Server ServerConfig `koanf:"server"`
+	Store  StoreConfig  `koanf:"store"`
 }
 
 func Load() (*Config, error) {
@@ -22,7 +26,9 @@ func Load() (*Config, error) {
 	config := Config{}
 
 	k.Load(structs.Provider(Config{
-		Port: 3000,
+		Server: ServerConfig{
+			Port: 3000,
+		},
 		Store: StoreConfig{
 			Path: "data",
 		},

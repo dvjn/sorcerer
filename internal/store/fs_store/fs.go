@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/dvjn/sorcerer/internal/config"
-	"github.com/dvjn/sorcerer/internal/model"
+	"github.com/dvjn/sorcerer/internal/store/model"
 )
 
 type FS struct {

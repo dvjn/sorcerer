@@ -1,4 +1,4 @@
-package controller
+package distribution
 
 import (
 	"fmt"
@@ -9,13 +9,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) initiateUpload(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 
 	if digest := r.URL.Query().Get("digest"); digest != "" {
-		err := c.store.PutBlob(name, digest, r.Body)
+		err := d.store.PutBlob(name, digest, r.Body)
 		if err != nil {
 			sendError(w, http.StatusBadRequest, errBlobUploadInvalid, err.Error())
 			return
@@ -31,9 +31,9 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	if digest := r.URL.Query().Get("mount"); digest != "" {
 		from := r.URL.Query().Get("from")
 		if from != "" {
-			err := c.store.MountBlob(from, name, digest)
+			err := d.store.MountBlob(from, name, digest)
 			if err != nil {
-				uploadID, err := c.store.InitiateUpload(name)
+				uploadID, err := d.store.InitiateUpload(name)
 				if err != nil {
 					sendError(w, http.StatusBadRequest, errBlobUploadInvalid, err.Error())
 					return
@@ -54,7 +54,7 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	uploadID, err := c.store.InitiateUpload(name)
+	uploadID, err := d.store.InitiateUpload(name)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, errBlobUploadInvalid, err.Error())
 		return
@@ -67,14 +67,14 @@ func (c *Controller) InitiateUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (c *Controller) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) uploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 	contentRange := r.Header.Get("Content-Range")
 
-	info, err := c.store.GetUploadInfo(name, reference)
+	info, err := d.store.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errBlobUploadUnknown, err.Error())
 		return
@@ -103,7 +103,7 @@ func (c *Controller) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 		end = start + r.ContentLength - 1
 	}
 
-	newOffset, err := c.store.UploadChunk(name, reference, r.Body, start, end)
+	newOffset, err := d.store.UploadChunk(name, reference, r.Body, start, end)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid range") {
 			sendError(w, http.StatusRequestedRangeNotSatisfiable, errRangeInvalid, err.Error())
@@ -120,7 +120,7 @@ func (c *Controller) UploadBlobChunk(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (c *Controller) CompleteUpload(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) completeUpload(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -137,7 +137,7 @@ func (c *Controller) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 		content = r.Body
 	}
 
-	err := c.store.CompleteUpload(name, reference, digest, content)
+	err := d.store.CompleteUpload(name, reference, digest, content)
 	if err != nil {
 		sendError(w, http.StatusBadRequest, errBlobUploadInvalid, err.Error())
 		return
@@ -149,13 +149,13 @@ func (c *Controller) CompleteUpload(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (c *Controller) GetBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) getBlobUploadStatus(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	reference := chi.URLParam(r, "reference")
 
-	info, err := c.store.GetUploadInfo(name, reference)
+	info, err := d.store.GetUploadInfo(name, reference)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errBlobUploadUnknown, err.Error())
 		return

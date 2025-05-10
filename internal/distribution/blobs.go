@@ -1,4 +1,4 @@
-package controller
+package distribution
 
 import (
 	"fmt"
@@ -8,13 +8,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (c *Controller) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) checkBlobExists(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	exists, size, err := c.store.HasBlob(name, digest)
+	exists, size, err := d.store.HasBlob(name, digest)
 	if err != nil {
 		sendError(w, http.StatusInternalServerError, errBlobUnknown, err.Error())
 		return
@@ -30,7 +30,7 @@ func (c *Controller) CheckBlobExists(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (c *Controller) GetBlob(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) getBlob(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
@@ -41,7 +41,7 @@ func (c *Controller) GetBlob(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Range request not fully implemented, returning full blob:", rangeHeader)
 	}
 
-	blob, size, err := c.store.GetBlob(name, digest)
+	blob, size, err := d.store.GetBlob(name, digest)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errBlobUnknown, err.Error())
 		return
@@ -58,13 +58,13 @@ func (c *Controller) GetBlob(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *Controller) DeleteBlob(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) deleteBlob(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 	digest := chi.URLParam(r, "digest")
 
-	err := c.store.DeleteBlob(name, digest)
+	err := d.store.DeleteBlob(name, digest)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errBlobUnknown, err.Error())
 		return

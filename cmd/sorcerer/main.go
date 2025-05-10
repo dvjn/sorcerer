@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dvjn/sorcerer/internal/api"
 	"github.com/dvjn/sorcerer/internal/config"
+	"github.com/dvjn/sorcerer/internal/distribution"
 	"github.com/dvjn/sorcerer/internal/store"
-	"github.com/dvjn/sorcerer/internal/web/controller"
-	"github.com/dvjn/sorcerer/internal/web/router"
 )
 
 func main() {
@@ -33,10 +33,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	controller := controller.New(store)
+	distribution := distribution.New(store)
 
-	router := router.New(controller)
+	api := api.New(distribution)
 
-	fmt.Printf("Starting server on port %d\n", config.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", config.Port), router)
+	fmt.Printf("Listening on port %d\n", config.Server.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", config.Server.Port), api.Router())
 }

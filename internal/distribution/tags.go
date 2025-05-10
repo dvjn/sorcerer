@@ -1,4 +1,4 @@
-package controller
+package distribution
 
 import (
 	"encoding/json"
@@ -9,12 +9,12 @@ import (
 	spec_v1 "github.com/opencontainers/distribution-spec/specs-go/v1"
 )
 
-func (c *Controller) ListTags(w http.ResponseWriter, r *http.Request) {
+func (d *Distribution) listTags(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repository := chi.URLParam(r, "repository")
 	name := owner + "/" + repository
 
-	tags, err := c.store.ListTags(name)
+	tags, err := d.store.ListTags(name)
 	if err != nil {
 		sendError(w, http.StatusNotFound, errNameUnknown, err.Error())
 		return

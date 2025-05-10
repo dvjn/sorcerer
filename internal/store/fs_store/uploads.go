@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dvjn/sorcerer/internal/model"
+	"github.com/dvjn/sorcerer/internal/store/model"
 )
 
 func (s *FS) uploadDir(name string) string {
