@@ -10,6 +10,7 @@ import (
 
 	"github.com/dvjn/sorcerer/internal/store"
 	"github.com/go-chi/chi/v5"
+	spec_v1 "github.com/opencontainers/distribution-spec/specs-go/v1"
 )
 
 type Controller struct {
@@ -435,10 +436,7 @@ func (c *Controller) ListTags(w http.ResponseWriter, r *http.Request) {
 		tags = tags[:limit]
 	}
 
-	response := struct {
-		Name string   `json:"name"`
-		Tags []string `json:"tags"`
-	}{
+	response := spec_v1.TagList{
 		Name: name,
 		Tags: tags,
 	}

@@ -3,6 +3,8 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+
+	spec_v1 "github.com/opencontainers/distribution-spec/specs-go/v1"
 )
 
 type RegistryError struct {
@@ -105,18 +107,9 @@ func (e *RegistryError) WithStatus(status int) *RegistryError {
 	}
 }
 
-type RegistryErrorResponse struct {
-	Errors []RegistryErrorDetail `json:"errors"`
-}
-
-type RegistryErrorDetail struct {
-	Code    string `json:"code"`
-	Message string `json:"message,omitempty"`
-}
-
 func sendError(w http.ResponseWriter, err *RegistryError, message string) {
-	response := RegistryErrorResponse{
-		Errors: []RegistryErrorDetail{
+	response := spec_v1.ErrorResponse{
+		Errors: []spec_v1.ErrorInfo{
 			{
 				Code:    err.Code,
 				Message: message,

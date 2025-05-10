@@ -7,6 +7,7 @@ require (
 	github.com/knadh/koanf/providers/env v1.1.0
 	github.com/knadh/koanf/providers/structs v1.0.0
 	github.com/knadh/koanf/v2 v2.2.0
+	github.com/opencontainers/distribution-spec/specs-go v0.0.0-20250220192232-583e014d1541
 )
 
 require (
