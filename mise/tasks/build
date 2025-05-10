@@ -1,10 +1,10 @@
 #! /usr/bin/env bash
 
+#USAGE flag "-o --os <os>" help="The OS to build for" default="linux"
+#USAGE flag "-a --arch <arch>" help="The architecture to build for" default="amd64"
+
 #MISE env={ CGO_ENABLED="0" }
 #MISE sources=["cmd/**/*.go", "internal/**/*.go", "go.mod", "go.sum"]
-#MISE outputs=["./bin/sorcerer-${GOOS}-${GOARCH}"]
+#MISE outputs=["./bin/sorcerer-${usage_os}-${usage_arch}"]
 
-GOOS=${GOOS:-linux}
-GOARCH=${GOARCH:-amd64}
-
-go build -o ./bin/sorcerer-${GOOS}-${GOARCH} ./cmd/sorcerer
+go build -o ./bin/sorcerer-${usage_os}-${usage_arch} ./cmd/sorcerer
