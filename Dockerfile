@@ -4,11 +4,17 @@ ARG TARGETARCH
 
 WORKDIR /app
 
+ENV GOPATH=/app/.cache
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=${GOPATH} \
+    go mod download
 
+ENV CGO_ENABLED=0
+ENV GOOS=${TARGETOS}
+ENV GOARCH=${TARGETARCH}
 COPY . .
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o sorcerer ./cmd/sorcerer
+RUN --mount=type=cache,target=${GOPATH} \
+    go build -o sorcerer ./cmd/sorcerer
 
 FROM scratch
 
