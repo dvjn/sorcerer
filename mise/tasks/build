@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+
+#MISE sources=["cmd/**/*.go", "internal/**/*.go", "go.mod", "go.sum"]
+#MISE outputs=["./tmp/sorcerer"]
+
+go build -o ./tmp/sorcerer ./cmd/sorcerer

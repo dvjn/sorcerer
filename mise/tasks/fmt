@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+
+#MISE sources=["cmd/**/*.go", "internal/**/*.go"]
+
+gofumpt -l -w cmd/ internal/

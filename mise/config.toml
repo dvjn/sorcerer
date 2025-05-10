@@ -1,0 +1,4 @@
+[tools]
+go = "1.24"
+"go:mvdan.cc/gofumpt" = "latest"
+watchexec = "latest"
