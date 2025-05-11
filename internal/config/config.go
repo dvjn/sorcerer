@@ -7,7 +7,12 @@ import (
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/structs"
 	"github.com/knadh/koanf/v2"
+	"github.com/rs/zerolog"
 )
+
+type LogConfig struct {
+	Level string `koanf:"level"`
+}
 
 type ServerConfig struct {
 	Port int `koanf:"port"`
@@ -29,6 +34,7 @@ type StoreConfig struct {
 }
 
 type Config struct {
+	Log    LogConfig    `koanf:"log"`
 	Server ServerConfig `koanf:"server"`
 	Auth   AuthConfig   `koanf:"auth"`
 	Store  StoreConfig  `koanf:"store"`
@@ -39,6 +45,9 @@ func Load() (*Config, error) {
 	config := Config{}
 
 	k.Load(structs.Provider(Config{
+		Log: LogConfig{
+			Level: zerolog.LevelInfoValue,
+		},
 		Server: ServerConfig{
 			Port: 3000,
 		},

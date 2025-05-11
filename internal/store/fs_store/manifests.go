@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 func (s *FS) manifestDir(name string) string {
@@ -204,7 +206,7 @@ func (s *FS) DeleteManifest(name, reference string) error {
 			return nil
 		})
 		if err != nil {
-			fmt.Printf("Error cleaning up tags: %v\n", err)
+			log.Warn().Err(err).Msg("error cleaning up tags")
 		}
 
 		return nil

@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/rs/zerolog/log"
 )
 
 func (s *FS) referrerDir(name string) string {
@@ -134,7 +136,7 @@ func (s *FS) GetReferrers(name, digest string, artifactType string) ([]byte, err
 		}
 
 		if err := os.WriteFile(referrerPath, content, 0o644); err != nil {
-			fmt.Printf("Failed to cache referrers: %v\n", err)
+			log.Error().Err(err).Msg("failed to cache referrers")
 		}
 	} else if artifactType != "" {
 		var index map[string]any

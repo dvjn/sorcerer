@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"net/http"
 
+	"github.com/dvjn/sorcerer/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -19,7 +20,8 @@ func New(distribution, auth http.Handler) *Api {
 
 func (a *Api) Router() *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(middleware.RequestID)
+	r.Use(logger.Middleware)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", a.index)

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/dvjn/sorcerer/internal/logger"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -38,7 +39,7 @@ func (d *Distribution) getBlob(w http.ResponseWriter, r *http.Request) {
 
 	rangeHeader := r.Header.Get("Range")
 	if rangeHeader != "" {
-		fmt.Println("Range request not fully implemented, returning full blob:", rangeHeader)
+		logger.Get(r.Context()).Warn().Str("range", rangeHeader).Msg("range header for blob not fully implemented")
 	}
 
 	blob, size, err := d.store.GetBlob(name, digest)
@@ -54,7 +55,7 @@ func (d *Distribution) getBlob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := io.Copy(w, blob); err != nil {
-		fmt.Printf("Error streaming blob: %v\n", err)
+		logger.Get(r.Context()).Error().Err(err).Msg("error streaming blob")
 	}
 }
 

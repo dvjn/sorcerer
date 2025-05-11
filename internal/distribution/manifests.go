@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/dvjn/sorcerer/internal/logger"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -102,7 +103,7 @@ func (d *Distribution) putManifest(w http.ResponseWriter, r *http.Request) {
 		if subject, ok := manifest["subject"].(map[string]any); ok {
 			if subjectDigest, ok := subject["digest"].(string); ok {
 				if err := d.store.UpdateReferrers(name, subjectDigest, body); err != nil {
-					fmt.Printf("Error updating referrers: %v\n", err)
+					logger.Get(r.Context()).Error().Err(err).Msg("error updating referrers")
 				}
 				w.Header().Set("OCI-Subject", subjectDigest)
 			}
@@ -129,7 +130,7 @@ func (d *Distribution) deleteManifest(w http.ResponseWriter, r *http.Request) {
 				if subject, ok := manifest["subject"].(map[string]any); ok {
 					if subjectDigest, ok := subject["digest"].(string); ok {
 						if err := d.store.RemoveReferrer(name, subjectDigest, reference); err != nil {
-							fmt.Printf("Error removing from referrers: %v\n", err)
+							logger.Get(r.Context()).Error().Err(err).Msg("error removing from referrers")
 						}
 					}
 				}
