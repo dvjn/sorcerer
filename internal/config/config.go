@@ -19,14 +19,21 @@ type ServerConfig struct {
 }
 
 const (
-	AuthModeNone = "none"
+	AuthModeNone     = "none"
+	AuthModeHtpasswd = "htpasswd"
 )
 
 type NoAuthConfig struct{}
 
+type HtpasswdConfig struct {
+	File     string `koanf:"file"`     // Path to htpasswd file
+	Contents string `koanf:"contents"` // Inline htpasswd content
+}
+
 type AuthConfig struct {
-	Mode   string       `koanf:"mode"`
-	NoAuth NoAuthConfig `koanf:"no_auth"`
+	Mode     string          `koanf:"mode"`
+	NoAuth   NoAuthConfig    `koanf:"no_auth"`
+	Htpasswd HtpasswdConfig  `koanf:"htpasswd"`
 }
 
 type StoreConfig struct {
@@ -52,8 +59,9 @@ func Load() (*Config, error) {
 			Port: 3000,
 		},
 		Auth: AuthConfig{
-			Mode:   AuthModeNone,
-			NoAuth: NoAuthConfig{},
+			Mode:     AuthModeNone,
+			NoAuth:   NoAuthConfig{},
+			Htpasswd: HtpasswdConfig{},
 		},
 		Store: StoreConfig{
 			Path: "data",
@@ -74,8 +82,15 @@ func Load() (*Config, error) {
 func (c *Config) Validate() []error {
 	errors := []error{}
 
-	if c.Auth.Mode != AuthModeNone {
+	if c.Auth.Mode != AuthModeNone && c.Auth.Mode != AuthModeHtpasswd {
 		errors = append(errors, fmt.Errorf("invalid auth mode: %s", c.Auth.Mode))
+	}
+
+	// Additional validation for htpasswd mode
+	if c.Auth.Mode == AuthModeHtpasswd {
+		if c.Auth.Htpasswd.File == "" && c.Auth.Htpasswd.Contents == "" {
+			errors = append(errors, fmt.Errorf("htpasswd auth mode requires either file or contents to be specified"))
+		}
 	}
 
 	return errors

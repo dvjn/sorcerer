@@ -9,9 +9,12 @@ require (
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/opencontainers/distribution-spec/specs-go v0.0.0-20250220192232-583e014d1541
 	github.com/rs/zerolog v1.34.0
+	github.com/tg123/go-htpasswd v1.2.4
+	golang.org/x/crypto v0.37.0
 )
 
 require (
+	github.com/GehirnInc/crypt v0.0.0-20230320061759-8cc1b52080c5 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
