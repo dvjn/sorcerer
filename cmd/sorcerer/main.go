@@ -30,7 +30,7 @@ func main() {
 		log.Fatal().Errs("errors", errors).Msg("config validations failed")
 	}
 
-	auth, err := auth.New(&config.Auth)
+	auth, err := auth.New(&config.Auth, &log.Logger)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize auth")
 	}

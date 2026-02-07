@@ -14,6 +14,7 @@ container images privately.
 - Simple configuration
 - Minimal dependencies
 - Lightweight design
+- HTPASSWD authentication support
 
 
 ## Usage
@@ -51,7 +52,9 @@ Sorcerer can be configured using the following environment variables:
 | -------------------- | ------- | ------------------------------------------------------------------------------- |
 | `PORT`               | `3000`  | Port to run the server on.                                                      |
 | `STORE__PATH`        | `data`  | Path to store registry data.                                                    |
-| `AUTH__MODE`         | `none`  | Authentication mode. Can only be set to `none` for now.                         |
+| `AUTH__MODE`         | `none`  | Authentication mode. Can be `none` or `htpasswd`.                               |
+| `AUTH__HTPASSWD__FILE` | -    | Path to htpasswd file (required when AUTH__MODE=htpasswd).                      |
+| `AUTH__HTPASSWD__CONTENTS` | -  | Inline htpasswd contents (alternative to file). One per line in `user:hash` format. |
 | `LOG__LEVEL`         | `info`  | Log level. Can be set to `debug`, `info`, `warn`, `error`, `fatal`, or `panic`. |
 
 
