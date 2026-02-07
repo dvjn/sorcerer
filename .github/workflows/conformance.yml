@@ -9,6 +9,10 @@ on:
 jobs:
   conformance:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        auth: [none, htpasswd]
+      fail-fast: false
 
     steps:
       - name: Checkout
@@ -30,6 +34,21 @@ jobs:
         run: |
           cd distribution-spec/conformance
           go test -c
+
+      - name: Setup auth
+        run: |
+          case "${{ matrix.auth }}" in
+            none)
+              echo "running with no authentication"
+              ;;
+            htpasswd)
+              htpasswd -Bbc .htpasswd testuser testpass
+              echo "AUTH__MODE=htpasswd" >> $GITHUB_ENV
+              echo "AUTH__HTPASSWD__FILE=.htpasswd" >> $GITHUB_ENV
+              echo "OCI_USERNAME=testuser" >> $GITHUB_ENV
+              echo "OCI_PASSWORD=testpass" >> $GITHUB_ENV
+              ;;
+          esac
 
       - name: Start sorcerer server
         run: |
@@ -63,7 +82,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: conformance-results
+          name: conformance-results-${{ matrix.auth }}
           path: |
             distribution-spec/conformance/report.html
             distribution-spec/conformance/junit.xml
