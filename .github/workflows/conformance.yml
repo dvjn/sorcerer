@@ -15,10 +15,15 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Checkout
+      - name: Checkout sorcerer
+        uses: actions/checkout@v4
+
+      - name: Checkout distribution-spec
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          repository: opencontainers/distribution-spec
+          path: distribution-spec
+          ref: refs/tags/v1.1.1
 
       - name: Set up Go
         uses: actions/setup-go@v5
