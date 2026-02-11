@@ -6,7 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/MicahParks/keyfunc/v3"
+	"github.com/MicahParks/jwkset"
 	"github.com/rs/zerolog"
 )
 
@@ -14,10 +15,11 @@ import (
 type JWKSProvider struct {
 	jwksURL    string
 	cacheTTL   time.Duration
-	provider   *oidc.Provider
+	keyfunc    keyfunc.Keyfunc
 	mu         sync.RWMutex
-	lastFetch time.Time
-	logger    *zerolog.Logger
+	lastFetch  time.Time
+	logger     *zerolog.Logger
+	cancel     context.CancelFunc
 }
 
 // NewJWKSProvider creates a new JWKS provider with caching
@@ -26,15 +28,34 @@ func NewJWKSProvider(jwksURL string, cacheTTL time.Duration, logger *zerolog.Log
 		return nil, fmt.Errorf("logger is required")
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use jwkset to create a JWKS storage with caching options
+	storage, err := jwkset.NewStorageFromHTTP(jwksURL, jwkset.HTTPClientStorageOptions{
+		RefreshInterval: cacheTTL,
+	})
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("failed to create JWKS storage: %w", err)
+	}
+
+	// Create keyfunc from storage
+	jwksKeyfunc, err := keyfunc.New(keyfunc.Options{
+		Ctx:     ctx,
+		Storage: storage,
+	})
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("failed to create keyfunc: %w", err)
+	}
+
 	p := &JWKSProvider{
 		jwksURL:  jwksURL,
 		cacheTTL: cacheTTL,
+		keyfunc:  jwksKeyfunc,
 		logger:   logger,
-	}
-
-	// Initial fetch
-	if err := p.refreshProvider(context.Background()); err != nil {
-		return nil, fmt.Errorf("failed to initialize JWKS provider: %w", err)
+		cancel:   cancel,
+		lastFetch: time.Now(),
 	}
 
 	p.logger.Info().
@@ -45,48 +66,14 @@ func NewJWKSProvider(jwksURL string, cacheTTL time.Duration, logger *zerolog.Log
 	return p, nil
 }
 
-// GetProvider returns the OIDC provider, refreshing cache if needed
-func (p *JWKSProvider) GetProvider(ctx context.Context) (*oidc.Provider, error) {
-	p.mu.RLock()
-	needsRefresh := time.Since(p.lastFetch) > p.cacheTTL
-	p.mu.RUnlock()
-
-	if needsRefresh {
-		if err := p.refreshProvider(ctx); err != nil {
-			// If refresh fails, use cached provider if available
-			p.mu.RLock()
-			defer p.mu.RUnlock()
-			if p.provider == nil {
-				return nil, fmt.Errorf("no cached provider and refresh failed: %w", err)
-			}
-			p.logger.Warn().
-				Err(err).
-				Str("jwks_url", p.jwksURL).
-				Msg("jwks refresh failed, using cached keys")
-		}
-	}
-
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.provider, nil
+// GetKeyfunc returns the keyfunc for JWT verification
+func (p *JWKSProvider) GetKeyfunc() keyfunc.Keyfunc {
+	return p.keyfunc
 }
 
-// refreshProvider fetches the JWKS provider from the remote URL
-func (p *JWKSProvider) refreshProvider(ctx context.Context) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	provider, err := oidc.NewProvider(ctx, p.jwksURL)
-	if err != nil {
-		return fmt.Errorf("failed to fetch JWKS from %s: %w", p.jwksURL, err)
+// Close cleans up resources
+func (p *JWKSProvider) Close() {
+	if p.cancel != nil {
+		p.cancel()
 	}
-
-	p.provider = provider
-	p.lastFetch = time.Now()
-
-	p.logger.Debug().
-		Str("jwks_url", p.jwksURL).
-		Msg("jwks provider refreshed")
-
-	return nil
 }

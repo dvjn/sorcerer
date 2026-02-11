@@ -135,21 +135,9 @@ func (a *JWTAuth) authenticate(r *http.Request) (string, error) {
 	}
 
 	ctx := r.Context()
-	idToken, err := a.validator.Validate(ctx, token)
+	claims, err := a.validator.Validate(ctx, token)
 	if err != nil {
 		return "", &authErr{message: err.Error()}
-	}
-
-	// Extract subject claim
-	var claims struct {
-		Sub string `json:"sub"`
-	}
-	if err := idToken.Claims(&claims); err != nil {
-		return "", &authErr{message: "failed to extract subject claim"}
-	}
-
-	if claims.Sub == "" {
-		return "", &authErr{message: "missing subject claim in token"}
 	}
 
 	return claims.Sub, nil

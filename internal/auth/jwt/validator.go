@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -14,12 +14,17 @@ const (
 	clockSkewTolerance = 30 * time.Second
 )
 
+// Claims represents the custom JWT claims we extract
+type Claims struct {
+	Sub string `json:"sub"`
+	jwt.RegisteredClaims
+}
+
 // Validator validates JWT tokens using JWKS
 type Validator struct {
 	provider *JWKSProvider
 	issuer   string
 	audience string
-	verifier *oidc.IDTokenVerifier
 	logger   *zerolog.Logger
 }
 
@@ -36,24 +41,6 @@ func NewValidator(provider *JWKSProvider, issuer, audience string, logger *zerol
 		logger:   logger,
 	}
 
-	// Create verifier from provider
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	oidcProvider, err := provider.GetProvider(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get provider for verifier: %w", err)
-	}
-
-	// Configure verifier with required claims
-	v.verifier = oidcProvider.Verifier(&oidc.Config{
-		ClientID:          audience,
-		SkipClientIDCheck: false,
-		SkipIssuerCheck:   false,
-		SkipExpiryCheck:   false,
-		Now:               func() time.Time { return time.Now() },
-	})
-
 	v.logger.Info().
 		Str("issuer", issuer).
 		Str("audience", audience).
@@ -62,14 +49,20 @@ func NewValidator(provider *JWKSProvider, issuer, audience string, logger *zerol
 	return v, nil
 }
 
-// Validate validates a JWT token and returns its claims
-func (v *Validator) Validate(ctx context.Context, token string) (*oidc.IDToken, error) {
-	if token == "" {
+// Validate validates a JWT token and returns the validated claims
+func (v *Validator) Validate(ctx context.Context, tokenString string) (*Claims, error) {
+	if tokenString == "" {
 		return nil, v.newValidationError("missing token")
 	}
 
-	// Parse and verify the token using the verifier
-	idToken, err := v.verifier.Verify(ctx, token)
+	// Get JWKS keyfunc for verification
+	kf := v.provider.GetKeyfunc()
+	if kf == nil {
+		return nil, fmt.Errorf("jwks not available")
+	}
+
+	// Parse and verify the token with keyfunc
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, kf.Keyfunc, jwt.WithLeeway(clockSkewTolerance))
 	if err != nil {
 		v.logger.Debug().
 			Err(err).
@@ -77,20 +70,38 @@ func (v *Validator) Validate(ctx context.Context, token string) (*oidc.IDToken, 
 		return nil, v.newValidationError("invalid or expired JWT token")
 	}
 
-	// Extract subject claim for logging
-	var claims struct {
-		Sub string `json:"sub"`
+	// Extract claims
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
+		return nil, v.newValidationError("invalid token claims")
 	}
 
-	if err := idToken.Claims(&claims); err != nil {
-		return nil, v.newValidationError("failed to extract subject claim")
+	// Custom validation for issuer and audience (keyfunc does signature verification)
+	if claims.Issuer != v.issuer {
+		return nil, v.newValidationError("invalid issuer")
+	}
+
+	var audienceMatch bool
+	for _, aud := range claims.Audience {
+		if aud == v.audience {
+			audienceMatch = true
+			break
+		}
+	}
+	if !audienceMatch {
+		return nil, v.newValidationError("invalid audience")
+	}
+
+	if claims.Sub == "" {
+		return nil, v.newValidationError("missing subject claim")
 	}
 
 	v.logger.Debug().
 		Str("sub", claims.Sub).
+		Str("iss", claims.Issuer).
 		Msg("jwt validated successfully")
 
-	return idToken, nil
+	return claims, nil
 }
 
 // newValidationError creates a standardized validation error
