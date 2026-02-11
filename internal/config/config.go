@@ -21,6 +21,7 @@ type ServerConfig struct {
 const (
 	AuthModeNone     = "none"
 	AuthModeHtpasswd = "htpasswd"
+	AuthModeJWT      = "jwt"
 )
 
 type NoAuthConfig struct{}
@@ -30,10 +31,18 @@ type HtpasswdConfig struct {
 	Contents string `koanf:"contents"` // Inline htpasswd content
 }
 
+type JWTConfig struct {
+	JWKSURL  string `koanf:"jwks_url"`  // URL to JWKS endpoint
+	Issuer   string `koanf:"issuer"`    // Expected token issuer
+	Audience string `koanf:"audience"`  // Expected token audience
+	CacheTTL int    `koanf:"cache_ttl"` // JWKS cache duration in seconds, default: 300
+}
+
 type AuthConfig struct {
 	Mode     string          `koanf:"mode"`
 	NoAuth   NoAuthConfig    `koanf:"no_auth"`
 	Htpasswd HtpasswdConfig  `koanf:"htpasswd"`
+	JWT      JWTConfig       `koanf:"jwt"`
 }
 
 type StoreConfig struct {
@@ -82,7 +91,7 @@ func Load() (*Config, error) {
 func (c *Config) Validate() []error {
 	errors := []error{}
 
-	if c.Auth.Mode != AuthModeNone && c.Auth.Mode != AuthModeHtpasswd {
+	if c.Auth.Mode != AuthModeNone && c.Auth.Mode != AuthModeHtpasswd && c.Auth.Mode != AuthModeJWT {
 		errors = append(errors, fmt.Errorf("invalid auth mode: %s", c.Auth.Mode))
 	}
 
@@ -90,6 +99,22 @@ func (c *Config) Validate() []error {
 	if c.Auth.Mode == AuthModeHtpasswd {
 		if c.Auth.Htpasswd.File == "" && c.Auth.Htpasswd.Contents == "" {
 			errors = append(errors, fmt.Errorf("htpasswd auth mode requires either file or contents to be specified"))
+		}
+	}
+
+	// Additional validation for jwt mode
+	if c.Auth.Mode == AuthModeJWT {
+		if c.Auth.JWT.JWKSURL == "" {
+			errors = append(errors, fmt.Errorf("jwt auth mode requires jwks_url to be specified"))
+		}
+		if c.Auth.JWT.Issuer == "" {
+			errors = append(errors, fmt.Errorf("jwt auth mode requires issuer to be specified"))
+		}
+		if c.Auth.JWT.Audience == "" {
+			errors = append(errors, fmt.Errorf("jwt auth mode requires audience to be specified"))
+		}
+		if c.Auth.JWT.CacheTTL == 0 {
+			c.Auth.JWT.CacheTTL = 300 // Default TTL: 5 minutes
 		}
 	}
 
